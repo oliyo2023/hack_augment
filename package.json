@@ -1,0 +1,36 @@
+{
+  "name": "augment-reset-tool",
+  "version": "1.0.0",
+  "description": "Augment Extension Trial Reset Tool - Reset trial period for Augment coding extension",
+  "main": "augment-reset.js",
+  "scripts": {
+    "start": "node augment-reset.js",
+    "reset": "node augment-reset.js"
+  },
+  "keywords": [
+    "augment",
+    "vscode",
+    "cursor",
+    "trial",
+    "reset",
+    "extension",
+    "coding",
+    "nim"
+  ],
+  "author": "oliyo2023",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oliyo2023/hack_augment.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oliyo2023/hack_augment/issues"
+  },
+  "homepage": "https://github.com/oliyo2023/hack_augment#readme",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "bin": {
+    "augment-reset": "./augment-reset.js"
+  }
+}
