@@ -1,20 +1,18 @@
 #!/usr/bin/env nim
 ##[
-Augment Extension Trial Reset Tool
+Augment 扩展试用期重置工具
 
-This script resets the trial period for the Augment coding extension
-by modifying the extension's configuration files.
-Supports Windows, macOS, and Linux systems.
+此脚本通过修改扩展的配置文件来重置 Augment 编程扩展的试用期。
+支持 Windows、macOS 和 Linux 系统。
 
-Main features:
-- Automatically detects and closes running VS Code
-- Backs up existing configuration
-- Generates new random device ID
-- Preserves user settings
+主要功能：
+- 自动检测并关闭正在运行的 VS Code
+- 备份现有配置
+- 生成新的随机设备 ID
+- 保留用户设置
 
-Author: Based on cursor-reset by @triallord
-Created: 2/Jun/2025
-Converted to Nim
+创建时间：2025年6月2日
+转换为 Nim 语言
 ]##
 
 import std/[os, json, times, random, strutils, strformat, osproc, terminal]
@@ -87,14 +85,13 @@ proc backupFile(filePath: string): Future[string] {.async.} =
     raise newException(IOError, fmt"Backup failed: {e.msg}")
 
 proc getAugmentConfigPaths(): seq[string] =
-  let homedir = getHomeDir()
   var paths: seq[string] = @[]
 
   when defined(windows):
     let appdata = getEnv("APPDATA")
     let localappdata = getEnv("LOCALAPPDATA")
     
-    # Main configuration paths
+    # 主要配置路径
     paths.add(appdata / "Code" / "User" / "globalStorage" / "augment.augment" / "state.json")
     paths.add(appdata / "Cursor" / "User" / "globalStorage" / "augment.augment" / "state.json")
     paths.add(appdata / "Code" / "User" / "globalStorage" / "augment.augment" / "subscription.json")
@@ -102,7 +99,7 @@ proc getAugmentConfigPaths(): seq[string] =
     paths.add(appdata / "Code" / "User" / "globalStorage" / "augment.augment" / "account.json")
     paths.add(appdata / "Cursor" / "User" / "globalStorage" / "augment.augment" / "account.json")
     
-    # Additional cache and storage locations
+    # 额外的缓存和存储位置
     paths.add(appdata / "Code" / "Cache" / "augment.augment")
     paths.add(appdata / "Cursor" / "Cache" / "augment.augment")
     paths.add(appdata / "Code" / "CachedData" / "augment.augment")
@@ -111,7 +108,8 @@ proc getAugmentConfigPaths(): seq[string] =
     paths.add(localappdata / "Cursor" / "User" / "globalStorage" / "augment.augment")
     
   elif defined(macosx):
-    # Main configuration paths
+    let homedir = getHomeDir()
+    # 主要配置路径
     paths.add(homedir / "Library" / "Application Support" / "Code" / "User" / "globalStorage" / "augment.augment" / "state.json")
     paths.add(homedir / "Library" / "Application Support" / "Cursor" / "User" / "globalStorage" / "augment.augment" / "state.json")
     paths.add(homedir / "Library" / "Application Support" / "Code" / "User" / "globalStorage" / "augment.augment" / "subscription.json")
@@ -119,14 +117,15 @@ proc getAugmentConfigPaths(): seq[string] =
     paths.add(homedir / "Library" / "Application Support" / "Code" / "User" / "globalStorage" / "augment.augment" / "account.json")
     paths.add(homedir / "Library" / "Application Support" / "Cursor" / "User" / "globalStorage" / "augment.augment" / "account.json")
     
-    # Additional cache and storage locations
+    # 额外的缓存和存储位置
     paths.add(homedir / "Library" / "Caches" / "Code" / "augment.augment")
     paths.add(homedir / "Library" / "Caches" / "Cursor" / "augment.augment")
     paths.add(homedir / "Library" / "Application Support" / "Code" / "Cache" / "augment.augment")
     paths.add(homedir / "Library" / "Application Support" / "Cursor" / "Cache" / "augment.augment")
     
   elif defined(linux):
-    # Main configuration paths
+    let homedir = getHomeDir()
+    # 主要配置路径
     paths.add(homedir / ".config" / "Code" / "User" / "globalStorage" / "augment.augment" / "state.json")
     paths.add(homedir / ".config" / "Cursor" / "User" / "globalStorage" / "augment.augment" / "state.json")
     paths.add(homedir / ".config" / "Code" / "User" / "globalStorage" / "augment.augment" / "subscription.json")
@@ -134,7 +133,7 @@ proc getAugmentConfigPaths(): seq[string] =
     paths.add(homedir / ".config" / "Code" / "User" / "globalStorage" / "augment.augment" / "account.json")
     paths.add(homedir / ".config" / "Cursor" / "User" / "globalStorage" / "augment.augment" / "account.json")
     
-    # Additional cache and storage locations
+    # 额外的缓存和存储位置
     paths.add(homedir / ".cache" / "Code" / "augment.augment")
     paths.add(homedir / ".cache" / "Cursor" / "augment.augment")
     paths.add(homedir / ".config" / "Code" / "Cache" / "augment.augment")
@@ -165,10 +164,6 @@ proc generateUserId(): string =
     userId.add(toHex(rand(15), 1).toLower())
   return userId
 
-proc getUserInput(prompt: string): Future[string] {.async.} =
-  stdout.write(prompt)
-  stdout.flushFile()
-  return stdin.readLine()
 
 proc resetAugmentTrial() {.async.} =
   try:
@@ -184,14 +179,14 @@ proc resetAugmentTrial() {.async.} =
     let configPaths = getAugmentConfigPaths()
     echo "📂 Found configuration paths: ", configPaths
 
-    # Generate new account data
+    # 生成新的账户数据
     echo "🎲 Generating new account data..."
     let newDeviceId = generateDeviceId()
     let newUserId = generateUserId()
     let userEmail = generateEmail()
     echo "✅ New account data generated successfully\n"
 
-    # Calculate trial dates
+    # 计算试用期日期
     let trialStartDate = now()
     let trialEndDate = trialStartDate + 14.days
 
@@ -199,10 +194,10 @@ proc resetAugmentTrial() {.async.} =
       echo fmt"\n🔄 Processing: {configPath}"
 
       try:
-        # Create directory if it doesn't exist
+        # 如果目录不存在则创建
         createDir(parentDir(configPath))
 
-        # Backup existing config
+        # 备份现有配置
         echo "💾 Backing up configuration..."
         try:
           let backupPath = await backupFile(configPath)
@@ -210,16 +205,16 @@ proc resetAugmentTrial() {.async.} =
         except:
           echo "ℹ️ No existing configuration to backup\n"
 
-        # If it's a directory, remove it completely
+        # 如果是目录，则完全删除
         try:
           if dirExists(configPath):
             removeDir(configPath)
             echo "✅ Removed directory: " & configPath
             continue
         except:
-          discard # Ignore errors if file/directory doesn't exist
+          discard # 如果文件/目录不存在则忽略错误
 
-        # Create new configuration based on file type
+        # 根据文件类型创建新配置
         var newConfig: JsonNode
         if "subscription.json" in configPath:
           newConfig = %*{
@@ -246,7 +241,7 @@ proc resetAugmentTrial() {.async.} =
             "deviceHistory": newJArray()
           }
         else:
-          # Default state.json configuration
+          # 默认的 state.json 配置
           newConfig = %*{
             "deviceId": newDeviceId,
             "userId": newUserId,
@@ -284,7 +279,7 @@ proc resetAugmentTrial() {.async.} =
             }
           }
 
-        # Save new configuration
+        # 保存新配置
         writeFile(configPath, pretty(newConfig, 2))
         echo "✅ New configuration saved successfully\n"
 
