@@ -1,0 +1,37 @@
+# Nim 编译产物
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.o
+*.obj
+
+# Nimble 缓存
+nimcache/
+htmldocs/
+
+# 日志文件
+*.log
+*.bak
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 备份文件
+*.backup
+*.orig

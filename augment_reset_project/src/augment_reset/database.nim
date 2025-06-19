@@ -4,7 +4,7 @@ Augment Reset - 数据库操作模块
 处理 SQLite 数据库的清理操作
 ]##
 
-import std/[strformat, logging, asyncdispatch, osproc, os, options, times]
+import std/[strformat, logging, asyncdispatch, osproc, options, times]
 import types, system, paths
 
 # ============================================================================

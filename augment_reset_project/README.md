@@ -44,25 +44,50 @@ augment_reset_project/
 - **database.nim**: 处理 SQLite 数据库的清理操作
 - **reset.nim**: 主要的重置逻辑和流程控制
 
-## 构建和运行
+## 快速开始
 
-### 使用 Nimble
+### 方法一：使用构建脚本（推荐）
+
+**Windows:**
+```cmd
+scripts\build.bat
+```
+
+**Linux/macOS:**
+```bash
+chmod +x scripts/build.sh
+./scripts/build.sh
+```
+
+### 方法二：使用 Nimble
 
 ```bash
+# 安装依赖检查
+nimble install_deps
+
 # 构建项目
 nimble build
 
-# 构建发布版本
+# 构建发布版本（推荐）
 nimble release
 
 # 运行测试
 nimble test
 
+# 运行示例
+nimble example
+
 # 清理构建文件
 nimble clean
+
+# 代码检查
+nimble check
+
+# 生成文档
+nimble docs
 ```
 
-### 直接使用 Nim
+### 方法三：直接使用 Nim
 
 ```bash
 # 编译
@@ -73,6 +98,12 @@ nim compile -d:release src/augment_reset.nim
 
 # 运行
 ./augment_reset
+
+# 查看版本
+./augment_reset --version
+
+# 查看帮助
+./augment_reset --help
 ```
 
 ## 使用方法

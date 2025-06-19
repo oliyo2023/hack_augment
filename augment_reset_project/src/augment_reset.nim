@@ -17,16 +17,35 @@ Augment 扩展试用期重置工具 - 模块化版本
 模块化重构：2025年6月20日
 ]##
 
-import std/[asyncdispatch, logging, strformat, options]
-import augment_reset/[types, system, reset]
+import std/[asyncdispatch, logging, strformat, options, os]
+import augment_reset/[types, system, reset, version]
 
 # ============================================================================
 # 主程序
 # ============================================================================
 
 proc main() {.async.} =
-  echo "🚀 Augment Extension Trial Reset Tool v2.0"
-  echo "==========================================\n"
+  # 检查命令行参数
+  if paramCount() > 0:
+    let arg = paramStr(1)
+    if arg == "--version" or arg == "-v":
+      showVersion()
+      return
+    elif arg == "--help" or arg == "-h":
+      showVersion()
+      echo ""
+      echo "使用方法:"
+      echo "  augment_reset [选项]"
+      echo ""
+      echo "选项:"
+      echo "  -h, --help     显示帮助信息"
+      echo "  -v, --version  显示版本信息"
+      echo ""
+      echo "不带参数运行将启动重置流程。"
+      return
+
+  echo "🚀 Augment Extension Trial Reset Tool ", getVersionString()
+  echo "================================================\n"
   
   # 初始化日志系统
   initLogger()
