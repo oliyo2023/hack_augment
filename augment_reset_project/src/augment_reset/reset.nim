@@ -1,0 +1,188 @@
+##[
+Augment Reset - 重置逻辑模块
+
+主要的重置逻辑和配置文件处理
+]##
+
+import std/[os, json, strformat, logging, asyncdispatch, options, times]
+import types, system, paths, config, idgen, database
+
+# ============================================================================
+# 配置文件处理
+# ============================================================================
+
+# 处理单个配置文件
+proc processConfigFile*(pathInfo: ConfigPathInfo, config: AugmentConfig): Future[OperationResult[bool]] {.async.} =
+  result = OperationResult[bool](
+    success: false,
+    data: some(false),
+    error: "",
+    timestamp: now()
+  )
+  
+  try:
+    info fmt"处理配置文件: {pathInfo.path}"
+    
+    # 确保目录存在
+    let parentDir = parentDir(pathInfo.path)
+    if not dirExists(parentDir):
+      createDir(parentDir)
+      info fmt"创建目录: {parentDir}"
+    
+    # 备份现有文件
+    if pathInfo.exists:
+      let backupResult = await backupFile(pathInfo.path)
+      if not backupResult.success:
+        warn fmt"备份文件失败: {backupResult.error}"
+    
+    # 如果是目录，删除它
+    if dirExists(pathInfo.path):
+      removeDir(pathInfo.path)
+      info fmt"删除目录: {pathInfo.path}"
+      result.success = true
+      result.data = some(true)
+      return result
+    
+    # 创建新配置
+    let newConfig = createConfigByType(pathInfo.fileType, config)
+    if newConfig.kind == JNull:
+      result.error = "无法创建配置内容"
+      return result
+    
+    # 保存配置文件
+    writeFile(pathInfo.path, pretty(newConfig, 2))
+    info fmt"配置文件已保存: {pathInfo.path}"
+    
+    result.success = true
+    result.data = some(true)
+    
+  except Exception as e:
+    result.error = fmt"处理配置文件失败: {e.msg}"
+    error result.error
+
+# ============================================================================
+# 主要重置函数
+# ============================================================================
+
+# 主要的重置函数
+proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
+  result = OperationResult[ResetStats](
+    success: false,
+    data: none(ResetStats),
+    error: "",
+    timestamp: now()
+  )
+  
+  var stats = ResetStats(
+    totalFiles: 0,
+    processedFiles: 0,
+    backupFiles: 0,
+    errorFiles: 0,
+    startTime: now(),
+    endTime: now()
+  )
+  
+  try:
+    info "开始 Augment 试用期重置"
+    
+    # 检查并关闭编辑器
+    echo "🔍 检查正在运行的编辑器..."
+    let editorCheck = isEditorRunning()
+    if editorCheck.success and editorCheck.data.isSome and editorCheck.data.get():
+      echo "⚠️ 检测到 VS Code 或 Cursor 正在运行，尝试关闭..."
+      let killResult = await killEditorProcess()
+      if killResult.success and killResult.data.isSome and killResult.data.get():
+        echo "✅ 编辑器已关闭\n"
+      else:
+        echo "❌ 无法关闭编辑器，请手动关闭后重试"
+        result.error = "无法关闭编辑器"
+        return result
+    
+    # 获取配置路径
+    let pathsResult = getAugmentConfigPaths()
+    if not pathsResult.success or pathsResult.data.isNone:
+      result.error = pathsResult.error
+      return result
+    
+    let configPaths = pathsResult.data.get()
+    stats.totalFiles = configPaths.len
+    echo fmt"📂 找到 {configPaths.len} 个配置路径"
+    
+    # 生成新的账户配置
+    echo "🎲 生成新的账户数据..."
+    let accountConfig = generateAccountConfig()
+    echo "✅ 新账户数据生成成功\n"
+
+    # 处理每个配置文件
+    for pathInfo in configPaths:
+      echo fmt"\n🔄 处理: {pathInfo.path}"
+      
+      let processResult = await processConfigFile(pathInfo, accountConfig)
+      if processResult.success:
+        stats.processedFiles.inc
+        echo "✅ 处理成功"
+      else:
+        stats.errorFiles.inc
+        echo fmt"❌ 处理失败: {processResult.error}"
+    
+    # 清理数据库记录
+    echo "\n🗄️ 清理数据库记录..."
+    let dbCleanResult = await cleanAllDatabases()
+    if dbCleanResult.success and dbCleanResult.data.isSome:
+      let dbResults = dbCleanResult.data.get()
+      for dbResult in dbResults:
+        if dbResult.success:
+          echo fmt"✅ 数据库清理成功: {extractFilename(dbResult.dbPath)}"
+        else:
+          echo fmt"❌ 数据库清理失败: {extractFilename(dbResult.dbPath)} - {dbResult.error}"
+    else:
+      echo fmt"❌ 数据库清理失败: {dbCleanResult.error}"
+
+    # 清理过期备份文件
+    echo "\n🧹 清理过期备份文件..."
+    for pathInfo in configPaths:
+      let dir = parentDir(pathInfo.path)
+      if dirExists(dir):
+        let cleanupResult = await cleanupOldBackups(dir)
+        if cleanupResult.success and cleanupResult.data.isSome:
+          let deletedCount = cleanupResult.data.get()
+          if deletedCount > 0:
+            echo fmt"清理了 {deletedCount} 个过期备份文件"
+
+    stats.endTime = now()
+
+    # 显示账户详情
+    echo "\n📋 账户详情:"
+    echo fmt"用户ID: {accountConfig.userId[0..7]}..."
+    echo fmt"设备ID: {accountConfig.deviceId[0..7]}..."
+    echo fmt"邮箱: {accountConfig.email}"
+    echo fmt"\n试用期: {TRIAL_DURATION_DAYS} 天"
+    let startDateStr = accountConfig.trialStartDate.format("yyyy-MM-dd")
+    let endDateStr = accountConfig.trialEndDate.format("yyyy-MM-dd")
+    echo fmt"开始日期: {startDateStr}"
+    echo fmt"结束日期: {endDateStr}"
+
+    # 显示统计信息
+    echo "\n📊 重置统计:"
+    echo fmt"总文件数: {stats.totalFiles}"
+    echo fmt"成功处理: {stats.processedFiles}"
+    echo fmt"处理失败: {stats.errorFiles}"
+    echo fmt"处理时间: {(stats.endTime - stats.startTime).inMilliseconds} 毫秒"
+
+    echo "\n🎉 Augment 扩展试用期重置完成!"
+    echo "\n⚠️ 重要提示:"
+    echo "1. 请重启您的编辑器 (VS Code 或 Cursor) 以使更改生效"
+    echo "2. 在提示时创建新账户"
+    echo "3. 试用期将持续 14 天"
+    echo "4. 如果仍有问题，请考虑使用不同的网络连接或 VPN"
+
+    result.success = true
+    result.data = some(stats)
+
+    await waitForKeypress()
+
+  except Exception as e:
+    stats.endTime = now()
+    result.error = fmt"重置过程中发生错误: {e.msg}"
+    error result.error
+    await waitForKeypress()
