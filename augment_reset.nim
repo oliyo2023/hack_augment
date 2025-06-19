@@ -9,6 +9,7 @@ Augment 扩展试用期重置工具
 - 自动检测并关闭正在运行的 VS Code/Cursor
 - 备份现有配置
 - 生成新的随机设备 ID
+- 清理 SQLite 数据库中的 Augment 记录
 - 保留用户设置
 - 完整的错误处理和日志记录
 
@@ -18,7 +19,9 @@ Augment 扩展试用期重置工具
 ]##
 
 import std/[os, json, times, random, strutils, strformat, osproc, terminal, logging, options]
-import std/[asyncdispatch, tables, sequtils]
+import std/[asyncdispatch, tables]
+
+# SQLite 数据库操作 - 使用系统调用
 
 # ============================================================================
 # 常量定义
@@ -27,7 +30,6 @@ import std/[asyncdispatch, tables, sequtils]
 const
   # 试用期配置
   TRIAL_DURATION_DAYS = 14
-  TRIAL_MAX_RESETS = 3
   
   # ID 生成配置
   DEVICE_ID_LENGTH = 64
@@ -38,7 +40,6 @@ const
   # 系统配置
   EDITOR_CLOSE_WAIT_MS = 1500
   BACKUP_RETENTION_DAYS = 30
-  MAX_RETRY_ATTEMPTS = 3
   
   # 文件配置
   CONFIG_FILES = [
@@ -122,11 +123,27 @@ type
     startTime*: DateTime
     endTime*: DateTime
 
+  # 数据库路径信息
+  DatabasePathInfo* = object
+    path*: string
+    editorType*: EditorType
+    exists*: bool
+
+  # 数据库清理结果
+  DatabaseCleanResult* = object
+    success*: bool
+    dbPath*: string
+    backupPath*: string
+    deletedRecords*: int
+    error*: string
+    timestamp*: DateTime
+
   # 自定义异常类型
   AugmentResetError* = object of CatchableError
   ConfigError* = object of AugmentResetError
   BackupError* = object of AugmentResetError
   EditorError* = object of AugmentResetError
+  DatabaseError* = object of AugmentResetError
 
 # ============================================================================
 # 系统操作模块 - 进程管理和系统交互
@@ -365,7 +382,6 @@ proc buildConfigPaths*(basePaths: Table[string, string], osType: OSType): seq[Co
   case osType:
   of osWindows:
     let appdata = basePaths.getOrDefault("appdata", "")
-    let localappdata = basePaths.getOrDefault("localappdata", "")
     
     if appdata != "":
       for editor in EDITORS:
@@ -648,6 +664,221 @@ proc createConfigByType*(fileType: ConfigFileType, config: AugmentConfig): JsonN
     result = createAccountConfig(config)
 
 # ============================================================================
+# 数据库操作模块 - SQLite 数据库清理
+# ============================================================================
+
+# 获取数据库路径
+proc getDatabasePaths*(): OperationResult[seq[DatabasePathInfo]] =
+  result = OperationResult[seq[DatabasePathInfo]](
+    success: false,
+    data: some(newSeq[DatabasePathInfo]()),
+    error: "",
+    timestamp: now()
+  )
+
+  try:
+    let osType = getCurrentOS()
+    var dbPaths: seq[DatabasePathInfo] = @[]
+
+    case osType:
+    of osWindows:
+      let appdata = getEnv("APPDATA")
+      if appdata != "":
+        # Cursor 数据库
+        let cursorPath = appdata / "Cursor" / "User" / "globalStorage" / "state.vscdb"
+        dbPaths.add(DatabasePathInfo(
+          path: cursorPath,
+          editorType: etCursor,
+          exists: fileExists(cursorPath)
+        ))
+
+        # VS Code 数据库
+        let codePath = appdata / "Code" / "User" / "globalStorage" / "state.vscdb"
+        dbPaths.add(DatabasePathInfo(
+          path: codePath,
+          editorType: etCode,
+          exists: fileExists(codePath)
+        ))
+
+        # Void 编辑器数据库
+        let voidPath = appdata / "Void" / "User" / "globalStorage" / "state.vscdb"
+        dbPaths.add(DatabasePathInfo(
+          path: voidPath,
+          editorType: etCode, # 使用 Code 类型作为默认
+          exists: fileExists(voidPath)
+        ))
+
+    of osMacOS:
+      let homeDir = getHomeDir()
+      let appSupport = homeDir / "Library" / "Application Support"
+
+      # Cursor 数据库
+      let cursorPath = appSupport / "Cursor" / "User" / "globalStorage" / "state.vscdb"
+      dbPaths.add(DatabasePathInfo(
+        path: cursorPath,
+        editorType: etCursor,
+        exists: fileExists(cursorPath)
+      ))
+
+      # VS Code 数据库
+      let codePath = appSupport / "Code" / "User" / "globalStorage" / "state.vscdb"
+      dbPaths.add(DatabasePathInfo(
+        path: codePath,
+        editorType: etCode,
+        exists: fileExists(codePath)
+      ))
+
+    of osLinux:
+      let homeDir = getHomeDir()
+      let configDir = homeDir / ".config"
+
+      # Cursor 数据库
+      let cursorPath = configDir / "Cursor" / "User" / "globalStorage" / "state.vscdb"
+      dbPaths.add(DatabasePathInfo(
+        path: cursorPath,
+        editorType: etCursor,
+        exists: fileExists(cursorPath)
+      ))
+
+      # VS Code 数据库
+      let codePath = configDir / "Code" / "User" / "globalStorage" / "state.vscdb"
+      dbPaths.add(DatabasePathInfo(
+        path: codePath,
+        editorType: etCode,
+        exists: fileExists(codePath)
+      ))
+
+      # Void 编辑器数据库
+      let voidPath = configDir / "Void" / "User" / "globalStorage" / "state.vscdb"
+      dbPaths.add(DatabasePathInfo(
+        path: voidPath,
+        editorType: etCode,
+        exists: fileExists(voidPath)
+      ))
+
+    of osUnsupported:
+      result.error = "不支持的操作系统"
+      return result
+
+    # 过滤掉不存在的路径
+    var existingPaths: seq[DatabasePathInfo] = @[]
+    for db in dbPaths:
+      if db.exists:
+        existingPaths.add(db)
+
+    result.success = true
+    result.data = some(existingPaths)
+    info fmt"找到 {existingPaths.len} 个数据库文件"
+
+  except Exception as e:
+    result.error = fmt"获取数据库路径时出错: {e.msg}"
+    error result.error
+
+# 清理单个数据库文件
+proc cleanDatabase*(dbInfo: DatabasePathInfo): Future[OperationResult[DatabaseCleanResult]] {.async.} =
+  result = OperationResult[DatabaseCleanResult](
+    success: false,
+    data: none(DatabaseCleanResult),
+    error: "",
+    timestamp: now()
+  )
+
+  try:
+    if not dbInfo.exists:
+      result.error = "数据库文件不存在"
+      return result
+
+    let editorName = if dbInfo.editorType == etCursor: "Cursor" else: "Code"
+    info fmt"正在处理 {editorName} 数据库: {dbInfo.path}"
+
+    # 创建备份
+    let backupResult = await backupFile(dbInfo.path)
+    if not backupResult.success:
+      result.error = fmt"备份数据库失败: {backupResult.error}"
+      return result
+
+    let backupPath = if backupResult.data.isSome: backupResult.data.get().backupPath else: ""
+
+    # 使用 SQLite 命令行工具删除记录
+    let deleteCmd = fmt"""sqlite3 "{dbInfo.path}" "DELETE FROM ItemTable WHERE key LIKE '%augment%';" """
+
+    info fmt"执行删除命令: {deleteCmd}"
+    let (output, exitCode) = execCmdEx(deleteCmd)
+
+    if exitCode != 0:
+      result.error = fmt"删除数据库记录失败: {output}"
+      return result
+
+    # 获取删除的记录数（这里简化处理，实际可能需要先查询再删除）
+    let deletedRecords = 0  # 简化处理
+
+    let cleanResult = DatabaseCleanResult(
+      success: true,
+      dbPath: dbInfo.path,
+      backupPath: backupPath,
+      deletedRecords: deletedRecords,
+      error: "",
+      timestamp: now()
+    )
+
+    result.success = true
+    result.data = some(cleanResult)
+    info fmt"{editorName} 数据库清理完成"
+
+  except Exception as e:
+    result.error = fmt"清理数据库时出错: {e.msg}"
+    error result.error
+
+# 清理所有数据库
+proc cleanAllDatabases*(): Future[OperationResult[seq[DatabaseCleanResult]]] {.async.} =
+  result = OperationResult[seq[DatabaseCleanResult]](
+    success: false,
+    data: some(newSeq[DatabaseCleanResult]()),
+    error: "",
+    timestamp: now()
+  )
+
+  try:
+    # 获取所有数据库路径
+    let dbPathsResult = getDatabasePaths()
+    if not dbPathsResult.success or dbPathsResult.data.isNone:
+      result.error = dbPathsResult.error
+      return result
+
+    let dbPaths = dbPathsResult.data.get()
+    if dbPaths.len == 0:
+      info "未找到需要处理的数据库文件"
+      result.success = true
+      return result
+
+    info fmt"找到 {dbPaths.len} 个数据库文件"
+    var cleanResults: seq[DatabaseCleanResult] = @[]
+
+    # 处理每个数据库
+    for dbInfo in dbPaths:
+      let cleanResult = await cleanDatabase(dbInfo)
+      if cleanResult.success and cleanResult.data.isSome:
+        cleanResults.add(cleanResult.data.get())
+      else:
+        # 即使失败也记录结果
+        cleanResults.add(DatabaseCleanResult(
+          success: false,
+          dbPath: dbInfo.path,
+          backupPath: "",
+          deletedRecords: 0,
+          error: cleanResult.error,
+          timestamp: now()
+        ))
+
+    result.success = true
+    result.data = some(cleanResults)
+    info "数据库清理处理完成"
+
+  except Exception as e:
+    result.error = fmt"清理数据库时出错: {e.msg}"
+    error result.error
+
+# ============================================================================
 # 主要重置逻辑
 # ============================================================================
 
@@ -761,6 +992,19 @@ proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
         stats.errorFiles.inc
         echo fmt"❌ 处理失败: {processResult.error}"
     
+    # 清理数据库记录
+    echo "\n🗄️ 清理数据库记录..."
+    let dbCleanResult = await cleanAllDatabases()
+    if dbCleanResult.success and dbCleanResult.data.isSome:
+      let dbResults = dbCleanResult.data.get()
+      for dbResult in dbResults:
+        if dbResult.success:
+          echo fmt"✅ 数据库清理成功: {extractFilename(dbResult.dbPath)}"
+        else:
+          echo fmt"❌ 数据库清理失败: {extractFilename(dbResult.dbPath)} - {dbResult.error}"
+    else:
+      echo fmt"❌ 数据库清理失败: {dbCleanResult.error}"
+
     # 清理过期备份文件
     echo "\n🧹 清理过期备份文件..."
     for pathInfo in configPaths:
