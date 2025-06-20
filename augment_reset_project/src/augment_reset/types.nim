@@ -36,6 +36,26 @@ const
     "Code",
     "Cursor"
   ]
+
+  # 支持的 JetBrains IDE
+  JETBRAINS_IDES* = [
+    "IntelliJIdea",
+    "PyCharm",
+    "WebStorm",
+    "PhpStorm",
+    "RubyMine",
+    "CLion",
+    "DataGrip",
+    "GoLand",
+    "Rider",
+    "AndroidStudio"
+  ]
+
+  # Windows 注册表路径
+  REGISTRY_PATHS* = [
+    "HKEY_CURRENT_USER\\Software\\JavaSoft",
+    "HKEY_CURRENT_USER\\Software\\JetBrains"
+  ]
   
   # 日志配置
   LOG_FILE* = "augment_reset.log"
@@ -55,6 +75,7 @@ type
   EditorType* = enum
     etCode = "Code"
     etCursor = "Cursor"
+    etJetBrains = "JetBrains"
 
   # 操作系统类型枚举
   OSType* = enum
@@ -116,12 +137,23 @@ type
     error*: string
     timestamp*: DateTime
 
+  # JetBrains 清理结果
+  JetBrainsCleanResult* = object
+    success*: bool
+    registryCleared*: bool
+    jetbrainsDir*: string
+    augmentDir*: string
+    clearedPaths*: seq[string]
+    error*: string
+    timestamp*: DateTime
+
   # 重置统计信息
   ResetStats* = object
     totalFiles*: int
     processedFiles*: int
     backupFiles*: int
     errorFiles*: int
+    jetbrainsCleared*: bool
     startTime*: DateTime
     endTime*: DateTime
 
@@ -136,3 +168,5 @@ type
   BackupError* = object of AugmentResetError
   EditorError* = object of AugmentResetError
   DatabaseError* = object of AugmentResetError
+  JetBrainsError* = object of AugmentResetError
+  RegistryError* = object of AugmentResetError

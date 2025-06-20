@@ -5,6 +5,29 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.1.0] - 2025-06-20
+
+### 新增
+- 🔧 **JetBrains IDE 完整支持**: 支持 IntelliJ IDEA、PyCharm、WebStorm、PhpStorm、RubyMine、CLion、DataGrip、GoLand、Rider、Android Studio
+- 🗂️ **Windows 注册表清理**: 自动清理 `HKEY_CURRENT_USER\Software\JavaSoft` 和 `HKEY_CURRENT_USER\Software\JetBrains`
+- 📁 **JetBrains 配置目录清理**: 删除 `.jetbrains` 和 `.augment` 目录
+- 🔍 **JetBrains 进程检测**: 自动检测和关闭正在运行的 JetBrains IDE
+- 📦 **新增 jetbrains.nim 模块**: 专门处理 JetBrains IDE 相关操作
+- 🧪 **JetBrains 测试套件**: 新增 JetBrains 功能的单元测试
+
+### 改进
+- 🎯 **重置流程增强**: 集成 JetBrains 清理到主重置流程
+- 📊 **统计信息扩展**: 重置统计中包含 JetBrains 清理状态
+- 💬 **用户提示优化**: 更新重要提示，包含 JetBrains IDE 相关说明
+- 📝 **文档更新**: 完整更新 README 和项目文档
+
+### 技术细节
+- 新增 `JetBrainsCleanResult` 类型定义
+- 新增 `JetBrainsError` 和 `RegistryError` 异常类型
+- 扩展 `ResetStats` 包含 `jetbrainsCleared` 字段
+- 支持跨平台的 JetBrains 配置路径检测
+- Windows 注册表操作使用 `reg delete` 命令
+
 ## [2.0.0] - 2025-06-20
 
 ### 新增

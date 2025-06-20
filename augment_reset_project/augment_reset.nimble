@@ -1,8 +1,8 @@
 # Package
 
-version       = "2.0.0"
+version       = "2.1.0"
 author        = "oliyo"
-description   = "Augment 扩展试用期重置工具 - 模块化版本"
+description   = "Augment 扩展试用期重置工具 - 支持 JetBrains IDE"
 license       = "MIT"
 srcDir        = "src"
 bin           = @["augment_reset"]

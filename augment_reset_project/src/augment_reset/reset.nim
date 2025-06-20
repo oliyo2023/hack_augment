@@ -5,7 +5,7 @@ Augment Reset - 重置逻辑模块
 ]##
 
 import std/[os, json, strformat, logging, asyncdispatch, options, times]
-import types, system, paths, config, idgen, database
+import types, system, paths, config, idgen, database, jetbrains
 
 # ============================================================================
 # 配置文件处理
@@ -92,11 +92,26 @@ proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
       echo "⚠️ 检测到 VS Code 或 Cursor 正在运行，尝试关闭..."
       let killResult = await killEditorProcess()
       if killResult.success and killResult.data.isSome and killResult.data.get():
-        echo "✅ 编辑器已关闭\n"
+        echo "✅ 编辑器已关闭"
       else:
         echo "❌ 无法关闭编辑器，请手动关闭后重试"
         result.error = "无法关闭编辑器"
         return result
+
+    # 检查并关闭 JetBrains IDE
+    echo "\n🔍 检查正在运行的 JetBrains IDE..."
+    let jetbrainsCheck = isJetBrainsRunning()
+    if jetbrainsCheck.success and jetbrainsCheck.data.isSome and jetbrainsCheck.data.get():
+      echo "⚠️ 检测到 JetBrains IDE 正在运行，尝试关闭..."
+      let killJetBrainsResult = await killJetBrainsProcess()
+      if killJetBrainsResult.success and killJetBrainsResult.data.isSome and killJetBrainsResult.data.get():
+        echo "✅ JetBrains IDE 已关闭\n"
+      else:
+        echo "❌ 无法关闭 JetBrains IDE，请手动关闭后重试"
+        result.error = "无法关闭 JetBrains IDE"
+        return result
+    else:
+      echo "✅ 未检测到运行中的 JetBrains IDE\n"
     
     # 获取配置路径
     let pathsResult = getAugmentConfigPaths()
@@ -138,6 +153,23 @@ proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
     else:
       echo fmt"❌ 数据库清理失败: {dbCleanResult.error}"
 
+    # 清理 JetBrains 相关数据
+    echo "\n🔧 清理 JetBrains IDE 数据..."
+    let jetbrainsCleanResult = await cleanJetBrains()
+    if jetbrainsCleanResult.success and jetbrainsCleanResult.data.isSome:
+      let jetbrainsResult = jetbrainsCleanResult.data.get()
+      if jetbrainsResult.success:
+        stats.jetbrainsCleared = true
+        echo "✅ JetBrains 数据清理完成"
+        if jetbrainsResult.registryCleared:
+          echo "  📋 注册表已清理"
+        if jetbrainsResult.clearedPaths.len > 0:
+          echo fmt"  📁 清理了 {jetbrainsResult.clearedPaths.len} 个目录"
+      else:
+        echo fmt"❌ JetBrains 数据清理失败: {jetbrainsResult.error}"
+    else:
+      echo fmt"❌ JetBrains 清理过程失败: {jetbrainsCleanResult.error}"
+
     # 清理过期备份文件
     echo "\n🧹 清理过期备份文件..."
     for pathInfo in configPaths:
@@ -167,14 +199,17 @@ proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
     echo fmt"总文件数: {stats.totalFiles}"
     echo fmt"成功处理: {stats.processedFiles}"
     echo fmt"处理失败: {stats.errorFiles}"
+    let jetbrainsStatus = if stats.jetbrainsCleared: "✅ 已完成" else: "❌ 未执行"
+    echo fmt"JetBrains 清理: {jetbrainsStatus}"
     echo fmt"处理时间: {(stats.endTime - stats.startTime).inMilliseconds} 毫秒"
 
     echo "\n🎉 Augment 扩展试用期重置完成!"
     echo "\n⚠️ 重要提示:"
-    echo "1. 请重启您的编辑器 (VS Code 或 Cursor) 以使更改生效"
+    echo "1. 请重启您的编辑器 (VS Code、Cursor 或 JetBrains IDE) 以使更改生效"
     echo "2. 在提示时创建新账户"
     echo "3. 试用期将持续 14 天"
-    echo "4. 如果仍有问题，请考虑使用不同的网络连接或 VPN"
+    echo "4. JetBrains IDE 用户可能需要重新登录账户"
+    echo "5. 如果仍有问题，请考虑使用不同的网络连接或 VPN"
 
     result.success = true
     result.data = some(stats)

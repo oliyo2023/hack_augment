@@ -11,15 +11,17 @@
 ## ✨ 功能特性
 
 ### 🎯 核心功能
-- 🔄 **智能重置**：配置文件 + 数据库双重清理，确保完全重置
+- 🔄 **智能重置**：配置文件 + 数据库 + 注册表三重清理，确保完全重置
 - 🛡️ **安全可靠**：自动备份所有修改文件，支持一键恢复
 - 🎲 **随机生成**：安全的设备ID、用户ID和邮箱地址生成
-- 🔍 **自动检测**：智能发现并关闭正在运行的编辑器
+- 🔍 **自动检测**：智能发现并关闭正在运行的编辑器和 IDE
+- 🔧 **JetBrains 支持**：完整支持 IntelliJ IDEA、PyCharm、WebStorm 等
 
 ### 🏗️ 技术特性
-- 📦 **模块化架构**：8个专门模块，职责清晰，易于维护
+- 📦 **模块化架构**：9个专门模块，职责清晰，易于维护
 - 🧪 **完整测试**：100% 测试覆盖，确保代码质量
 - 🌍 **跨平台支持**：Windows、macOS、Linux 原生支持
+- 🗂️ **注册表清理**：Windows 注册表自动清理（JavaSoft、JetBrains）
 - 📝 **详细日志**：完整的操作记录和错误追踪
 
 ### 🎨 用户体验
@@ -42,6 +44,7 @@
 │   │       ├── idgen.nim         # ID生成
 │   │       ├── config.nim        # 配置生成
 │   │       ├── database.nim      # 数据库操作
+│   │       ├── jetbrains.nim     # JetBrains IDE 支持
 │   │       ├── reset.nim         # 重置逻辑
 │   │       └── version.nim       # 版本管理
 │   ├── tests/                    # 测试套件
@@ -123,16 +126,18 @@ nimble docs
    ```
 
 3. **重置过程**
-   - 🔍 自动检测正在运行的编辑器
-   - 🛑 安全关闭编辑器进程
+   - 🔍 自动检测正在运行的编辑器和 IDE
+   - 🛑 安全关闭编辑器/IDE 进程
    - 📂 扫描并备份配置文件
    - 🎲 生成新的随机账户数据
    - 🗄️ 清理 SQLite 数据库记录
+   - 🔧 清理 JetBrains IDE 数据和注册表
    - 🧹 清理过期备份文件
    - 📊 显示详细的操作统计
 
 4. **完成重置**
-   - ✅ 重启编辑器
+   - ✅ 重启编辑器或 IDE
+   - 🔑 重新登录账户（JetBrains IDE）
    - 🎉 享受新的 14 天试用期
 
 ### 🛡️ 安全特性
@@ -186,19 +191,21 @@ nim compile --run tests/test_all.nim
 
 | 模块 | 功能 | 行数 |
 |------|------|------|
-| `types.nim` | 类型定义和常量 | 120 |
+| `types.nim` | 类型定义和常量 | 170 |
 | `system.nim` | 系统操作和进程管理 | 250 |
 | `paths.nim` | 路径管理和文件发现 | 200 |
 | `idgen.nim` | 安全ID生成 | 80 |
 | `config.nim` | 配置文件生成 | 80 |
 | `database.nim` | SQLite 数据库操作 | 100 |
-| `reset.nim` | 主要重置逻辑 | 180 |
+| `jetbrains.nim` | JetBrains IDE 支持 | 300 |
+| `reset.nim` | 主要重置逻辑 | 220 |
 | `version.nim` | 版本信息管理 | 30 |
 
 ## 🔍 工作原理
 
-Augment 扩展将试用期信息存储在两个位置：
+Augment 扩展将试用期信息存储在多个位置：
 
+### VS Code / Cursor
 1. **配置文件** (JSON格式)
    - 位置：`%APPDATA%/[Editor]/User/globalStorage/augment.augment/`
    - 包含：设备ID、用户ID、试用期时间等
@@ -207,15 +214,35 @@ Augment 扩展将试用期信息存储在两个位置：
    - 位置：`%APPDATA%/[Editor]/User/globalStorage/state.vscdb`
    - 包含：扩展状态和使用记录
 
+### JetBrains IDE
+3. **Windows 注册表**
+   - 位置：`HKEY_CURRENT_USER\Software\JavaSoft`
+   - 位置：`HKEY_CURRENT_USER\Software\JetBrains`
+   - 包含：IDE 配置和许可信息
+
+4. **配置目录**
+   - 位置：`%APPDATA%\.jetbrains` (Windows)
+   - 位置：`~/.augment` (所有平台)
+   - 包含：IDE 设置和插件数据
+
 本工具通过以下步骤实现完全重置：
 - 🔄 生成新的随机设备和用户标识
 - 📝 重写所有相关配置文件
 - 🗄️ 清理数据库中的历史记录
+- 🗂️ 清理 Windows 注册表项
+- 📁 删除 JetBrains 配置目录
 - 🛡️ 确保所有痕迹都被清除
 
 详细原理请参考：[principles/README.md](principles/README.md)
 
 ## 📈 版本历史
+
+- **v2.1.0** (2025-06-20) - JetBrains IDE 支持版本
+  - 🔧 **新增 JetBrains IDE 支持**：IntelliJ IDEA、PyCharm、WebStorm 等
+  - 🗂️ **Windows 注册表清理**：自动清理 JavaSoft 和 JetBrains 注册表项
+  - 📁 **配置目录清理**：删除 .jetbrains 和 .augment 目录
+  - 🔍 **进程检测增强**：自动检测和关闭 JetBrains IDE 进程
+  - 🧪 **测试覆盖扩展**：新增 JetBrains 功能测试
 
 - **v2.0.0** (2025-06-20) - 模块化重构版本
   - 🏗️ 完全模块化架构
