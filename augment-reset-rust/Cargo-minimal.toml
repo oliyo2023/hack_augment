@@ -1,0 +1,61 @@
+[package]
+name = "augment-reset"
+version = "2.2.0"
+edition = "2021"
+authors = ["oliyo <oliyo@example.com>"]
+description = "Augment Free Trail - Augment IDE清理工具 (Rust版本)"
+license = "MIT"
+repository = "https://github.com/oliyo/augment-reset-rust"
+keywords = ["augment", "ide", "cleaner", "sqlite", "database"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+# 数据库操作 - 使用系统 SQLite
+rusqlite = "0.30"
+
+# 异步运行时 - 精简版
+tokio = { version = "1.0", features = ["rt", "fs"] }
+
+# 命令行解析 - 精简版
+clap = { version = "4.0", features = ["derive"] }
+
+# 错误处理
+thiserror = "1.0"
+anyhow = "1.0"
+
+# 序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 颜色输出
+colored = "2.0"
+
+# 交互式界面 - 精简版
+dialoguer = { version = "0.11", default-features = false, features = ["basic"] }
+
+# 文件系统操作
+walkdir = "2.4"
+dirs = "5.0"
+
+# 日志
+log = "0.4"
+env_logger = "0.10"
+
+# 时间处理
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[profile.release]
+# 极致大小优化
+opt-level = "z"          # 优化文件大小
+lto = true               # 链接时优化
+codegen-units = 1        # 单个代码生成单元
+panic = "abort"          # 移除 panic 处理
+strip = true             # 移除调试符号
+overflow-checks = false  # 禁用溢出检查
+
+[[bin]]
+name = "augment-reset"
+path = "src/main.rs"

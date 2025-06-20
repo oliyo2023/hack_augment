@@ -1,0 +1,80 @@
+[package]
+name = "augment-reset"
+version = "2.2.0"
+edition = "2021"
+description = "Augment Free Trail - Augment IDE清理工具 (Rust版本)"
+authors = ["oliyo"]
+license = "MIT"
+repository = "https://github.com/oliyo/augment-reset-rust"
+keywords = ["augment", "ide", "cleaner", "vscode", "cursor"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "augment-reset"
+path = "src/main.rs"
+
+[dependencies]
+# SQLite 数据库 (bundled 特性包含静态 SQLite)
+rusqlite = { version = "0.30", features = ["bundled"] }
+
+# 命令行参数解析
+clap = { version = "4.4", features = ["derive", "color"] }
+
+# 异步运行时
+tokio = { version = "1.0", features = ["full"] }
+
+# 序列化/反序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 日志记录
+log = "0.4"
+env_logger = "0.10"
+
+# 错误处理
+anyhow = "1.0"
+thiserror = "1.0"
+
+# 文件系统操作
+walkdir = "2.4"
+
+# 时间处理
+chrono = { version = "0.4", features = ["serde"] }
+
+# 跨平台路径
+dirs = "5.0"
+
+# 颜色输出
+colored = "2.0"
+
+# 交互式菜单
+dialoguer = "0.11"
+
+# 进度条 (可选，用于精简版本可以移除)
+indicatif = { version = "0.17", optional = true }
+
+# UUID 生成 (可选)
+uuid = { version = "1.6", features = ["v4"], optional = true }
+
+[dev-dependencies]
+tempfile = "3.8"
+tokio-test = "0.4"
+
+[features]
+default = ["full"]
+full = ["indicatif", "uuid"]
+minimal = []
+
+[profile.release]
+# 优化设置 - 针对文件大小优化
+opt-level = "z"          # 优化文件大小而不是速度
+lto = true               # 链接时优化
+codegen-units = 1        # 减少代码生成单元
+panic = "abort"          # 移除 panic 处理代码
+strip = true             # 移除调试符号
+overflow-checks = false  # 禁用溢出检查
+
+[profile.dev]
+# 开发时设置
+opt-level = 0
+debug = true
