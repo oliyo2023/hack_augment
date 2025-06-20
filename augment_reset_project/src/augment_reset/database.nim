@@ -2,10 +2,10 @@
 Augment Reset - 数据库操作模块
 
 处理 SQLite 数据库的清理操作
-使用内置 SQLite 库，无需外部依赖
+使用 tiny_sqlite 模块，支持静态编译
 ]##
 
-import std/[strformat, logging, asyncdispatch, options, times, strutils]
+import std/[strformat, logging, asyncdispatch, options, times, strutils, os]
 import tiny_sqlite
 import types, system, paths
 
@@ -25,6 +25,10 @@ proc checkTableExists(db: DbConn, tableName: string): bool =
 # 检查数据库是否为有效的 SQLite 文件
 proc isValidSQLiteFile(filePath: string): bool =
   try:
+    if not fileExists(filePath):
+      return false
+
+    # 尝试打开数据库来验证
     let db = openDatabase(filePath)
     defer: db.close()
 

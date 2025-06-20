@@ -35,7 +35,10 @@ task build, "构建项目":
   exec "nim compile --verbosity:1 --outdir:target/output src/augment_reset.nim"
 
 task release, "构建发布版本":
-  exec "nim compile -d:release --verbosity:1 --outdir:target/output src/augment_reset.nim"
+  exec "nim compile -d:release -d:staticSqlite --opt:speed --verbosity:1 --outdir:target/output src/augment_reset.nim"
+
+task static, "构建静态编译版本":
+  exec "nim compile -d:release --opt:speed --dynlibOverride:sqlite3 --verbosity:1 --outdir:target/output src/augment_reset.nim"
 
 task test, "运行测试":
   exec "nim compile --run tests/test_all.nim"
@@ -48,7 +51,9 @@ task docs, "生成文档":
 
 task install_deps, "安装依赖":
   echo "检查系统依赖..."
-  echo "✅ 程序内置 SQLite 支持，无需安装外部 SQLite 工具"
+  echo "✅ 程序使用 tiny_sqlite 模块，支持静态编译"
+  echo "✅ 无需外部 SQLite 库或 DLL 文件"
+  echo "✅ 静态编译版本包含 SQLite 3.31.1"
   echo "✅ 所有依赖已通过 Nimble 自动管理"
   echo "✅ 系统要求：Nim 1.6.0 或更高版本"
 
