@@ -1,0 +1,5 @@
+nimTitle	config	augment_reset/config.html	module src/augment_reset/config		0
+nim	createStateConfig	augment_reset/config.html#createStateConfig,AugmentConfig	proc createStateConfig(config: AugmentConfig): JsonNode		15
+nim	createSubscriptionConfig	augment_reset/config.html#createSubscriptionConfig,AugmentConfig	proc createSubscriptionConfig(config: AugmentConfig): JsonNode		58
+nim	createAccountConfig	augment_reset/config.html#createAccountConfig,AugmentConfig	proc createAccountConfig(config: AugmentConfig): JsonNode		77
+nim	createConfigByType	augment_reset/config.html#createConfigByType,ConfigFileType,AugmentConfig	proc createConfigByType(fileType: ConfigFileType; config: AugmentConfig): JsonNode		94

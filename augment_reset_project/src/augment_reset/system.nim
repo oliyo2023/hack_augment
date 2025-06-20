@@ -4,7 +4,7 @@ Augment Reset - 系统操作模块
 处理系统相关操作：进程管理、文件操作、日志等
 ]##
 
-import std/[os, times, strformat, osproc, terminal, logging, asyncdispatch, options, strutils]
+import std/[os, times, strformat, osproc, logging, asyncdispatch, options, strutils]
 import types
 
 # ============================================================================

@@ -1,0 +1,7 @@
+nimTitle	idgen	augment_reset/idgen.html	module src/augment_reset/idgen		0
+nim	generateSecureRandomString	augment_reset/idgen.html#generateSecureRandomString,int,bool	proc generateSecureRandomString(length: int; useUppercase: bool = false): string		15
+nim	generateDeviceId	augment_reset/idgen.html#generateDeviceId	proc generateDeviceId(): string		32
+nim	generateUserId	augment_reset/idgen.html#generateUserId	proc generateUserId(): string		41
+nim	generateSessionId	augment_reset/idgen.html#generateSessionId	proc generateSessionId(): string		50
+nim	generateEmail	augment_reset/idgen.html#generateEmail	proc generateEmail(): string		59
+nim	generateAccountConfig	augment_reset/idgen.html#generateAccountConfig	proc generateAccountConfig(): AugmentConfig		73

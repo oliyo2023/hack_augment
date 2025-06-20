@@ -1,0 +1,8 @@
+nimTitle	cli	augment_reset/cli.html	module src/augment_reset/cli		0
+nim	showHelp	augment_reset/cli.html#showHelp	proc showHelp()		15
+nim	parseCleanTarget	augment_reset/cli.html#parseCleanTarget,string	proc parseCleanTarget(arg: string): CleanTarget		54
+nim	parseCommandLine	augment_reset/cli.html#parseCommandLine	proc parseCommandLine(): CleanOptions		70
+nim	interactiveSelectTarget	augment_reset/cli.html#interactiveSelectTarget	proc interactiveSelectTarget(): CleanTarget		126
+nim	confirmOperation	augment_reset/cli.html#confirmOperation,CleanTarget	proc confirmOperation(target: CleanTarget): bool		162
+nim	getTargetDescription	augment_reset/cli.html#getTargetDescription,CleanTarget	proc getTargetDescription(target: CleanTarget): string		202
+nim	getTargetDetails	augment_reset/cli.html#getTargetDetails,CleanTarget	proc getTargetDetails(target: CleanTarget): seq[string]		214

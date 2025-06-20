@@ -1,0 +1,3 @@
+nimTitle	database	augment_reset/database.html	module src/augment_reset/database		0
+nim	cleanDatabase	augment_reset/database.html#cleanDatabase,DatabasePathInfo	proc cleanDatabase(dbInfo: DatabasePathInfo): Future[\n    OperationResult[DatabaseCleanResult]]		42
+nim	cleanAllDatabases	augment_reset/database.html#cleanAllDatabases	proc cleanAllDatabases(): Future[OperationResult[seq[DatabaseCleanResult]]]		137

@@ -1,0 +1,11 @@
+nimTitle	version	augment_reset/version.html	module src/augment_reset/version		0
+nim	VERSION	augment_reset/version.html#VERSION	const VERSION		10
+nim	BUILD_DATE	augment_reset/version.html#BUILD_DATE	const BUILD_DATE		11
+nim	AUTHOR	augment_reset/version.html#AUTHOR	const AUTHOR		12
+nim	PROJECT_NAME	augment_reset/version.html#PROJECT_NAME	const PROJECT_NAME		13
+nim	DESCRIPTION	augment_reset/version.html#DESCRIPTION	const DESCRIPTION		14
+nim	WEBSITE	augment_reset/version.html#WEBSITE	const WEBSITE		15
+nim	WECHAT_ACCOUNT	augment_reset/version.html#WECHAT_ACCOUNT	const WECHAT_ACCOUNT		16
+nim	FEATURES	augment_reset/version.html#FEATURES	const FEATURES		19
+nim	showVersion	augment_reset/version.html#showVersion	proc showVersion()		34
+nim	getVersionString	augment_reset/version.html#getVersionString	proc getVersionString(): string		45

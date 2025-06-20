@@ -1,0 +1,9 @@
+nimTitle	system	augment_reset/system.html	module src/augment_reset/system		0
+nim	initLogger	augment_reset/system.html#initLogger	proc initLogger()		15
+nim	getCurrentOS	augment_reset/system.html#getCurrentOS	proc getCurrentOS(): OSType		30
+nim	waitForKeypress	augment_reset/system.html#waitForKeypress	proc waitForKeypress(): owned(Future[void])		45
+nim	isEditorRunning	augment_reset/system.html#isEditorRunning	proc isEditorRunning(): OperationResult[bool]		57
+nim	killEditorProcess	augment_reset/system.html#killEditorProcess	proc killEditorProcess(): Future[OperationResult[bool]]		98
+nim	formatTimestamp	augment_reset/system.html#formatTimestamp,DateTime	proc formatTimestamp(date: DateTime): string		148
+nim	backupFile	augment_reset/system.html#backupFile,string	proc backupFile(filePath: string): Future[OperationResult[BackupResult]]		162
+nim	cleanupOldBackups	augment_reset/system.html#cleanupOldBackups,string	proc cleanupOldBackups(directory: string): Future[OperationResult[int]]		198
