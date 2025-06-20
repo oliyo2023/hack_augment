@@ -1,7 +1,7 @@
 @echo off
 REM Augment Reset Tool 启动脚本 (Windows)
 
-echo 🚀 Augment Reset Tool v2.1.0
+echo 🚀 Augment Reset Tool v2.2.0
 echo ===============================
 
 REM 检查可执行文件是否存在

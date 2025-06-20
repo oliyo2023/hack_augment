@@ -4,7 +4,7 @@ Augment Reset - 测试套件
 测试各个模块的基本功能
 ]##
 
-import std/[unittest, asyncdispatch, options, strutils]
+import std/[unittest, options, strutils]
 import ../src/augment_reset/[types, system, idgen, paths, jetbrains, cli]
 
 suite "系统操作测试":

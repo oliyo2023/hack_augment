@@ -5,15 +5,17 @@ Augment Reset - 版本信息模块
 ]##
 
 const
-  VERSION* = "2.1.0"
+  VERSION* = "2.2.0"
   BUILD_DATE* = "2025-06-20"
   AUTHOR* = "oliyo"
-  DESCRIPTION* = "Augment 扩展试用期重置工具 - 支持 JetBrains IDE"
+  DESCRIPTION* = "Augment 扩展试用期重置工具 - 支持选择性清理"
 
   # 功能特性
   FEATURES* = [
     "跨平台支持 (Windows/macOS/Linux)",
-    "自动编辑器管理 (VS Code/Cursor/JetBrains)",
+    "选择性清理 (VS Code/Cursor/JetBrains)",
+    "交互式目标选择",
+    "命令行参数支持",
     "配置文件重置",
     "数据库清理",
     "JetBrains IDE 支持",

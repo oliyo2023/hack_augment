@@ -1,8 +1,8 @@
 # Package
 
-version       = "2.1.0"
+version       = "2.2.0"
 author        = "oliyo"
-description   = "Augment 扩展试用期重置工具 - 支持 JetBrains IDE"
+description   = "Augment 扩展试用期重置工具 - 支持选择性清理"
 license       = "MIT"
 srcDir        = "src"
 binDir        = "target/output"

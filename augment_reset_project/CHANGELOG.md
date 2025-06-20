@@ -5,6 +5,48 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.2.0] - 2025-06-20
+
+### 新增
+- 🎯 **选择性清理功能**: 支持单独清理 VS Code、Cursor 或 JetBrains IDE
+- 🖥️ **命令行参数支持**: `--vscode`、`--cursor`、`--jetbrains`、`--all` 选项
+- 🎮 **交互式模式**: `-i` 参数启用交互式目标选择
+- 📝 **详细帮助信息**: `--help` 显示完整的使用说明和示例
+- 🔧 **高级选项**: `--no-backup`、`--verbose` 等高级功能
+- 📦 **新增 cli.nim 模块**: 专门处理命令行接口和用户交互
+
+### 改进
+- 🎯 **智能进程检测**: 根据选择的目标只检测相关的编辑器/IDE
+- 📊 **增强统计信息**: 显示各个组件的具体清理状态
+- 🔄 **优化清理流程**: 跳过不相关的清理步骤，提高效率
+- 💬 **改进用户体验**: 更清晰的输出信息和操作提示
+- 🧪 **扩展测试覆盖**: 新增 CLI 模块的完整测试
+
+### 技术细节
+- 新增 `CleanTarget` 枚举类型 (ctAll, ctVSCode, ctCursor, ctJetBrains)
+- 新增 `CleanOptions` 配置结构
+- 扩展 `ResetStats` 包含各组件清理状态
+- 支持命令行参数解析和验证
+- 交互式用户界面实现
+
+### 使用示例
+```bash
+# 清理所有编辑器/IDE (默认)
+augment_reset
+
+# 仅清理 VS Code
+augment_reset --vscode
+
+# 仅清理 JetBrains IDE
+augment_reset --jetbrains
+
+# 交互式选择
+augment_reset -i
+
+# 详细模式清理 Cursor
+augment_reset --cursor --verbose
+```
+
 ## [2.1.0] - 2025-06-20
 
 ### 新增

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Augment Reset Tool 启动脚本 (Linux/macOS)
 
-echo "🚀 Augment Reset Tool v2.1.0"
+echo "🚀 Augment Reset Tool v2.2.0"
 echo "==============================="
 
 # 检查可执行文件是否存在
