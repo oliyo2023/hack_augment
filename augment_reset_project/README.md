@@ -46,7 +46,20 @@ augment_reset_project/
 
 ## 快速开始
 
-### 方法一：使用构建脚本（推荐）
+### 方法一：使用启动脚本（推荐）
+
+**Windows:**
+```cmd
+run.bat
+```
+
+**Linux/macOS:**
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+### 方法二：使用构建脚本
 
 **Windows:**
 ```cmd
@@ -59,7 +72,7 @@ chmod +x scripts/build.sh
 ./scripts/build.sh
 ```
 
-### 方法二：使用 Nimble
+### 方法三：使用 Nimble
 
 ```bash
 # 安装依赖检查
@@ -87,7 +100,7 @@ nimble check
 nimble docs
 ```
 
-### 方法三：直接使用 Nim
+### 方法四：直接使用 Nim
 
 ```bash
 # 编译
@@ -97,19 +110,19 @@ nim compile src/augment_reset.nim
 nim compile -d:release src/augment_reset.nim
 
 # 运行
-./augment_reset
+./target/output/augment_reset
 
 # 查看版本
-./augment_reset --version
+./target/output/augment_reset --version
 
 # 查看帮助
-./augment_reset --help
+./target/output/augment_reset --help
 ```
 
 ## 使用方法
 
-1. 关闭所有 VS Code 或 Cursor 实例
-2. 运行程序：`./augment_reset`
+1. 关闭所有 VS Code、Cursor 或 JetBrains IDE 实例
+2. 运行程序：`./target/output/augment_reset`
 3. 程序会自动：
    - 检测并关闭正在运行的编辑器
    - 备份现有配置文件

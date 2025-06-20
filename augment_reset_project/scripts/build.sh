@@ -6,6 +6,7 @@ echo "============================"
 
 echo ""
 echo "📦 清理旧文件..."
+rm -f target/output/augment_reset
 rm -f augment_reset
 rm -f src/augment_reset
 
@@ -16,10 +17,10 @@ nimble build -d:release
 if [ $? -eq 0 ]; then
     echo ""
     echo "✅ 构建成功！"
-    echo "📁 可执行文件: augment_reset"
+    echo "📁 可执行文件: target/output/augment_reset"
     echo ""
     echo "💡 使用方法:"
-    echo "   ./augment_reset"
+    echo "   ./target/output/augment_reset"
 else
     echo ""
     echo "❌ 构建失败！"

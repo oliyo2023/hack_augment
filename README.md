@@ -76,7 +76,7 @@ cd augment_reset_project
 nimble build -d:release
 
 # 运行重置工具
-.\augment_reset.exe
+.\target\output\augment_reset.exe
 ```
 
 #### macOS/Linux 用户
@@ -88,17 +88,17 @@ cd augment_reset_project
 nimble build -d:release
 
 # 运行重置工具
-./augment_reset
+./target/output/augment_reset
 ```
 
 ### 🔧 高级用法
 
 ```bash
 # 查看版本信息
-./augment_reset --version
+./target/output/augment_reset --version
 
 # 查看帮助信息
-./augment_reset --help
+./target/output/augment_reset --help
 
 # 运行测试套件
 nimble test
@@ -122,7 +122,7 @@ nimble docs
 
 2. **运行重置**
    ```bash
-   ./augment_reset
+   ./target/output/augment_reset
    ```
 
 3. **重置过程**

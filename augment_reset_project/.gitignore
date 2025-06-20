@@ -8,6 +8,11 @@
 *.o
 *.obj
 
+# 构建输出目录
+target/
+build/
+dist/
+
 # Nimble 缓存
 nimcache/
 htmldocs/
