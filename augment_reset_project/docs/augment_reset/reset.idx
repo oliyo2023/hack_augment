@@ -1,3 +1,0 @@
-nimTitle	reset	augment_reset/reset.html	module src/augment_reset/reset		0
-nim	processConfigFile	augment_reset/reset.html#processConfigFile,ConfigPathInfo,AugmentConfig	proc processConfigFile(pathInfo: ConfigPathInfo; config: AugmentConfig): Future[\n    OperationResult[bool]]		15
-nim	resetAugmentTrial	augment_reset/reset.html#resetAugmentTrial,CleanOptions	proc resetAugmentTrial(options: CleanOptions = CleanOptions(target: ctAll,\n    interactive: false, skipBackup: false, verbose: false)): Future[\n    OperationResult[ResetStats]]		68

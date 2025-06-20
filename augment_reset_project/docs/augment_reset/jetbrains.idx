@@ -1,7 +1,0 @@
-nimTitle	jetbrains	augment_reset/jetbrains.html	module src/augment_reset/jetbrains		0
-nim	clearWindowsRegistry	augment_reset/jetbrains.html#clearWindowsRegistry	proc clearWindowsRegistry(): Future[OperationResult[bool]]		18
-nim	getJetBrainsPaths	augment_reset/jetbrains.html#getJetBrainsPaths	proc getJetBrainsPaths(): seq[string]		66
-nim	cleanDirectory	augment_reset/jetbrains.html#cleanDirectory,string	proc cleanDirectory(dirPath: string): Future[OperationResult[bool]]		102
-nim	cleanJetBrains	augment_reset/jetbrains.html#cleanJetBrains	proc cleanJetBrains(): Future[OperationResult[JetBrainsCleanResult]]		138
-nim	isJetBrainsRunning	augment_reset/jetbrains.html#isJetBrainsRunning	proc isJetBrainsRunning(): OperationResult[bool]		209
-nim	killJetBrainsProcess	augment_reset/jetbrains.html#killJetBrainsProcess	proc killJetBrainsProcess(): Future[OperationResult[bool]]		254

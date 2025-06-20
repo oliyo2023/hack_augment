@@ -1,5 +1,0 @@
-nimTitle	paths	augment_reset/paths.html	module src/augment_reset/paths		0
-nim	getBasePaths	augment_reset/paths.html#getBasePaths,OSType	proc getBasePaths(osType: OSType): Table[string, string]		15
-nim	buildConfigPaths	augment_reset/paths.html#buildConfigPaths,Table[string,string],OSType	proc buildConfigPaths(basePaths: Table[string, string]; osType: OSType): seq[\n    ConfigPathInfo]		38
-nim	getAugmentConfigPaths	augment_reset/paths.html#getAugmentConfigPaths	proc getAugmentConfigPaths(): OperationResult[seq[ConfigPathInfo]]		151
-nim	getDatabasePaths	augment_reset/paths.html#getDatabasePaths	proc getDatabasePaths(): OperationResult[seq[DatabasePathInfo]]		182
