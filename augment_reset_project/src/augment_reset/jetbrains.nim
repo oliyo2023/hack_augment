@@ -72,10 +72,11 @@ proc getJetBrainsPaths*(): seq[string] =
     
     case osType:
     of osWindows:
-      # Windows: %APPDATA%\.jetbrains 和 %USERPROFILE%\.augment
+      # Windows: %APPDATA%\JetBrains 和 %USERPROFILE%\.augment
       let appdata = getEnv("APPDATA")
       if appdata != "":
-        result.add(appdata / ".jetbrains")
+        result.add(appdata / "JetBrains")  # 正确的 JetBrains 配置文件夹路径
+        result.add(appdata / ".jetbrains") # 备用路径（如果存在）
       result.add(homeDir / ".augment")
       
     of osMacOS:

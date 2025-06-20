@@ -2,7 +2,7 @@
 
 version       = "2.2.0"
 author        = "oliyo"
-description   = "Augment 扩展试用期重置工具 - 支持选择性清理"
+description   = "Augment Free Trail - Augment IDE清理工具 - 支持选择性清理"
 license       = "MIT"
 srcDir        = "src"
 binDir        = "target/output"
@@ -11,6 +11,7 @@ bin           = @["augment_reset"]
 # Dependencies
 
 requires "nim >= 1.6.0"
+requires "tiny_sqlite >= 0.1.0"
 
 # Tasks
 
@@ -47,14 +48,9 @@ task docs, "生成文档":
 
 task install_deps, "安装依赖":
   echo "检查系统依赖..."
-  when defined(windows):
-    echo "Windows: 确保已安装 SQLite3"
-  elif defined(macosx):
-    echo "macOS: 确保已安装 SQLite3 (通常已预装)"
-  else:
-    echo "Linux: 请安装 sqlite3 包"
-    echo "Ubuntu/Debian: sudo apt-get install sqlite3"
-    echo "CentOS/RHEL: sudo yum install sqlite"
+  echo "✅ 程序内置 SQLite 支持，无需安装外部 SQLite 工具"
+  echo "✅ 所有依赖已通过 Nimble 自动管理"
+  echo "✅ 系统要求：Nim 1.6.0 或更高版本"
 
 task check, "代码检查":
   exec "nim check src/augment_reset.nim"

@@ -1,6 +1,9 @@
-# Augment Reset Tool v2.0
+# Augment Free Trail v2.2.0
 
-Augment 扩展试用期重置工具 - 模块化版本
+🚀 Augment IDE清理工具 - 支持选择性清理
+
+**关注公众号：趣惠赚字老AI**
+**访问网站：https://www.oliyo.com**
 
 ## 功能特性
 
@@ -139,13 +142,13 @@ nim compile -d:release src/augment_reset.nim
 ## 使用方法
 
 ### 基本使用
-1. 关闭相关的编辑器/IDE 实例
+1. 运行程序，默认进入交互式选择模式
 2. 选择清理方式：
-   - **全部清理**: `./target/output/augment_reset` (默认)
-   - **VS Code**: `./target/output/augment_reset --vscode`
-   - **Cursor**: `./target/output/augment_reset --cursor`
-   - **JetBrains**: `./target/output/augment_reset --jetbrains`
-   - **交互选择**: `./target/output/augment_reset -i`
+   - **交互选择**: `./target/output/augment_reset` (默认)
+   - **直接清理 VS Code**: `./target/output/augment_reset --vscode --no-interactive`
+   - **直接清理 Cursor**: `./target/output/augment_reset --cursor --no-interactive`
+   - **直接清理 JetBrains**: `./target/output/augment_reset --jetbrains --no-interactive`
+   - **直接清理全部**: `./target/output/augment_reset --all --no-interactive`
 
 ### 程序执行流程
 3. 程序会自动：
@@ -182,8 +185,9 @@ nim compile -d:release src/augment_reset.nim
 ## 系统要求
 
 - Nim 1.6.0 或更高版本
-- SQLite3 命令行工具（用于数据库清理）
 - 支持的操作系统：Windows、macOS、Linux
+
+**注意**：程序内置 SQLite 支持，无需安装外部 SQLite 工具！
 
 ## 许可证
 
@@ -194,9 +198,15 @@ MIT License
 ### v2.2.0 (2025-06-20) - 选择性清理版本
 - 🎯 **新增选择性清理功能**：支持单独清理特定编辑器/IDE
 - 🖥️ **命令行参数支持**：`--vscode`、`--cursor`、`--jetbrains` 选项
-- 🎮 **交互式模式**：`-i` 参数启用用户友好的选择界面
+- 🎮 **默认交互式模式**：程序默认启用交互式选择，更安全友好
 - 📝 **完整帮助系统**：`--help` 显示详细使用说明
-- 🔧 **高级选项**：`--verbose`、`--no-backup` 等专业功能
+- 🔧 **高级选项**：`--no-interactive`、`--verbose`、`--no-backup` 等专业功能
+- 🎨 **全新 ASCII 横幅**：项目重命名为 "Augment Free Trail"
+- 📢 **宣传信息集成**：显示公众号和网站信息
+- 🐛 **修复 JetBrains 错误**：解决 "index out of bounds" 错误
+- 📁 **改进 JetBrains 清理**：正确清理 %APPDATA%\JetBrains 文件夹
+- 🗄️ **内置 SQLite 支持**：无需外部 SQLite 工具，程序内置数据库清理功能
+- 🔍 **智能数据库检测**：自动检测和验证 SQLite 数据库文件
 
 ### v2.1.0 (2025-06-20) - JetBrains 支持版本
 - 🔧 **JetBrains IDE 完整支持**：IntelliJ IDEA、PyCharm、WebStorm 等

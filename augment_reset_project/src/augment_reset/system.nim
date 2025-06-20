@@ -44,13 +44,8 @@ proc getCurrentOS*(): OSType =
 # 等待用户按键
 proc waitForKeypress*() {.async.} =
   try:
-    when defined(windows):
-      if getEnv("TERM") == "":
-        echo "\n按任意键退出..."
-        discard getch()
-    else:
-      echo "\n按 Enter 键退出..."
-      discard readLine(stdin)
+    echo "\n按 Enter 键退出..."
+    discard readLine(stdin)
   except:
     info "用户输入处理完成"
 

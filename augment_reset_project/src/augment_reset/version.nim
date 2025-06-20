@@ -4,11 +4,16 @@ Augment Reset - 版本信息模块
 定义版本信息和构建信息
 ]##
 
+import banner
+
 const
   VERSION* = "2.2.0"
   BUILD_DATE* = "2025-06-20"
   AUTHOR* = "oliyo"
-  DESCRIPTION* = "Augment 扩展试用期重置工具 - 支持选择性清理"
+  PROJECT_NAME* = "Augment Free Trail"
+  DESCRIPTION* = "Augment IDE清理工具 - 支持选择性清理"
+  WEBSITE* = "https://www.oliyo.com"
+  WECHAT_ACCOUNT* = "趣惠赚字老AI"
 
   # 功能特性
   FEATURES* = [
@@ -27,7 +32,7 @@ const
 
 # 显示版本信息
 proc showVersion*() =
-  echo "🚀 ", DESCRIPTION
+  showVersionBanner()
   echo "版本: v", VERSION
   echo "构建日期: ", BUILD_DATE
   echo "作者: ", AUTHOR

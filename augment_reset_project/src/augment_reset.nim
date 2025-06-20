@@ -18,13 +18,16 @@ Augment 扩展试用期重置工具 - 模块化版本
 ]##
 
 import std/[asyncdispatch, logging, strformat, options]
-import augment_reset/[types, system, reset, version, cli]
+import augment_reset/[types, system, reset, version, cli, banner]
 
 # ============================================================================
 # 主程序
 # ============================================================================
 
 proc main() {.async.} =
+  # 显示启动横幅
+  showStartupBanner()
+
   # 解析命令行参数
   var options = parseCommandLine()
 
@@ -37,8 +40,6 @@ proc main() {.async.} =
       echo "👋 操作已取消"
       return
 
-  echo "🚀 Augment Extension Trial Reset Tool ", getVersionString()
-  echo "================================================"
   echo fmt"🎯 清理目标: {getTargetDescription(options.target)}"
   echo ""
   

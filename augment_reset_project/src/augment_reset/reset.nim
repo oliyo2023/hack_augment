@@ -91,8 +91,10 @@ proc resetAugmentTrial*(options: CleanOptions = CleanOptions(target: ctAll, inte
 
     # 生成新的账户配置（如果需要的话）
     var accountConfig: AugmentConfig
+    var hasAccountConfig = false
     if options.target in [ctAll, ctVSCode, ctCursor]:
       accountConfig = generateAccountConfig()
+      hasAccountConfig = true
 
     # 根据目标检查并关闭相应的编辑器
     if options.target in [ctAll, ctVSCode, ctCursor]:
@@ -218,16 +220,17 @@ proc resetAugmentTrial*(options: CleanOptions = CleanOptions(target: ctAll, inte
 
     stats.endTime = now()
 
-    # 显示账户详情
-    echo "\n📋 账户详情:"
-    echo fmt"用户ID: {accountConfig.userId[0..7]}..."
-    echo fmt"设备ID: {accountConfig.deviceId[0..7]}..."
-    echo fmt"邮箱: {accountConfig.email}"
-    echo fmt"\n试用期: {TRIAL_DURATION_DAYS} 天"
-    let startDateStr = accountConfig.trialStartDate.format("yyyy-MM-dd")
-    let endDateStr = accountConfig.trialEndDate.format("yyyy-MM-dd")
-    echo fmt"开始日期: {startDateStr}"
-    echo fmt"结束日期: {endDateStr}"
+    # 显示账户详情（仅当有账户配置时）
+    if hasAccountConfig:
+      echo "\n📋 账户详情:"
+      echo fmt"用户ID: {accountConfig.userId[0..7]}..."
+      echo fmt"设备ID: {accountConfig.deviceId[0..7]}..."
+      echo fmt"邮箱: {accountConfig.email}"
+      echo fmt"\n试用期: {TRIAL_DURATION_DAYS} 天"
+      let startDateStr = accountConfig.trialStartDate.format("yyyy-MM-dd")
+      let endDateStr = accountConfig.trialEndDate.format("yyyy-MM-dd")
+      echo fmt"开始日期: {startDateStr}"
+      echo fmt"结束日期: {endDateStr}"
 
     # 显示统计信息
     echo "\n📊 重置统计:"
