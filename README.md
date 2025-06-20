@@ -1,6 +1,6 @@
 # 🚀 Augment Reset Tool
 
-> **专业级 Augment 扩展试用期重置工具**  
+> **专业级 Augment Code 扩展试用期重置工具**  
 > 模块化架构 | 完整测试 | 跨平台支持
 
 [![Nim](https://img.shields.io/badge/Nim-2.0+-yellow.svg)](https://nim-lang.org/)
