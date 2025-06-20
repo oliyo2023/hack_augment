@@ -17,47 +17,42 @@ Augment 扩展试用期重置工具 - 模块化版本
 模块化重构：2025年6月20日
 ]##
 
-import std/[asyncdispatch, logging, strformat, options, os]
-import augment_reset/[types, system, reset, version]
+import std/[asyncdispatch, logging, strformat, options]
+import augment_reset/[types, system, reset, version, cli]
 
 # ============================================================================
 # 主程序
 # ============================================================================
 
 proc main() {.async.} =
-  # 检查命令行参数
-  if paramCount() > 0:
-    let arg = paramStr(1)
-    if arg == "--version" or arg == "-v":
-      showVersion()
-      return
-    elif arg == "--help" or arg == "-h":
-      showVersion()
-      echo ""
-      echo "使用方法:"
-      echo "  augment_reset [选项]"
-      echo ""
-      echo "选项:"
-      echo "  -h, --help     显示帮助信息"
-      echo "  -v, --version  显示版本信息"
-      echo ""
-      echo "不带参数运行将启动重置流程。"
+  # 解析命令行参数
+  var options = parseCommandLine()
+
+  # 如果是交互模式，让用户选择目标
+  if options.interactive:
+    options.target = interactiveSelectTarget()
+
+    # 确认操作
+    if not confirmOperation(options.target):
+      echo "👋 操作已取消"
       return
 
   echo "🚀 Augment Extension Trial Reset Tool ", getVersionString()
-  echo "================================================\n"
+  echo "================================================"
+  echo fmt"🎯 清理目标: {getTargetDescription(options.target)}"
+  echo ""
   
   # 初始化日志系统
   initLogger()
   info "程序启动 - 模块化版本"
   
   try:
-    let resetResult = await resetAugmentTrial()
-    
+    let resetResult = await resetAugmentTrial(options)
+
     if resetResult.success:
       if resetResult.data.isSome():
         let stats = resetResult.data.get()
-        info fmt"重置完成 - 成功: {stats.processedFiles}, 失败: {stats.errorFiles}"
+        info fmt"重置完成 - 目标: {getTargetDescription(stats.target)}, 成功: {stats.processedFiles}, 失败: {stats.errorFiles}"
       else:
         info "重置完成，但无统计数据"
     else:

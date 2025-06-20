@@ -84,6 +84,13 @@ type
     osLinux = "linux"
     osUnsupported = "unsupported"
 
+  # 清理目标枚举
+  CleanTarget* = enum
+    ctAll = "all"
+    ctVSCode = "vscode"
+    ctCursor = "cursor"
+    ctJetBrains = "jetbrains"
+
 # ============================================================================
 # 数据结构类型
 # ============================================================================
@@ -147,6 +154,13 @@ type
     error*: string
     timestamp*: DateTime
 
+  # 清理选项配置
+  CleanOptions* = object
+    target*: CleanTarget
+    interactive*: bool
+    skipBackup*: bool
+    verbose*: bool
+
   # 重置统计信息
   ResetStats* = object
     totalFiles*: int
@@ -154,6 +168,9 @@ type
     backupFiles*: int
     errorFiles*: int
     jetbrainsCleared*: bool
+    vscodeCleared*: bool
+    cursorCleared*: bool
+    target*: CleanTarget
     startTime*: DateTime
     endTime*: DateTime
 

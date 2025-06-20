@@ -5,7 +5,7 @@ Augment Reset - 测试套件
 ]##
 
 import std/[unittest, asyncdispatch, options, strutils]
-import ../src/augment_reset/[types, system, idgen, paths, jetbrains]
+import ../src/augment_reset/[types, system, idgen, paths, jetbrains, cli]
 
 suite "系统操作测试":
   test "操作系统检测":
@@ -64,6 +64,33 @@ suite "JetBrains 操作测试":
     for i, path in paths:
       if i < 3:  # 只显示前3个
         echo "  - ", path
+
+suite "CLI 模块测试":
+  test "清理目标解析":
+    check parseCleanTarget("all") == ctAll
+    check parseCleanTarget("vscode") == ctVSCode
+    check parseCleanTarget("cursor") == ctCursor
+    check parseCleanTarget("jetbrains") == ctJetBrains
+    echo "清理目标解析测试通过"
+
+  test "目标描述获取":
+    check getTargetDescription(ctAll) == "所有编辑器/IDE"
+    check getTargetDescription(ctVSCode) == "VS Code"
+    check getTargetDescription(ctCursor) == "Cursor"
+    check getTargetDescription(ctJetBrains) == "JetBrains IDE"
+    echo "目标描述获取测试通过"
+
+  test "目标详细信息获取":
+    let allDetails = getTargetDetails(ctAll)
+    check allDetails.len == 3
+
+    let vscodeDetails = getTargetDetails(ctVSCode)
+    check vscodeDetails.len == 1
+
+    let jetbrainsDetails = getTargetDetails(ctJetBrains)
+    check jetbrainsDetails.len > 5  # JetBrains 有多个 IDE
+
+    echo "目标详细信息获取测试通过"
 
 when isMainModule:
   echo "🧪 运行 Augment Reset 测试套件"

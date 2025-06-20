@@ -4,8 +4,8 @@ Augment Reset - 重置逻辑模块
 主要的重置逻辑和配置文件处理
 ]##
 
-import std/[os, json, strformat, logging, asyncdispatch, options, times]
-import types, system, paths, config, idgen, database, jetbrains
+import std/[os, json, strformat, logging, asyncdispatch, options, times, sequtils]
+import types, system, paths, config, idgen, database, jetbrains, cli
 
 # ============================================================================
 # 配置文件处理
@@ -65,7 +65,7 @@ proc processConfigFile*(pathInfo: ConfigPathInfo, config: AugmentConfig): Future
 # ============================================================================
 
 # 主要的重置函数
-proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
+proc resetAugmentTrial*(options: CleanOptions = CleanOptions(target: ctAll, interactive: false, skipBackup: false, verbose: false)): Future[OperationResult[ResetStats]] {.async.} =
   result = OperationResult[ResetStats](
     success: false,
     data: none(ResetStats),
@@ -78,97 +78,132 @@ proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
     processedFiles: 0,
     backupFiles: 0,
     errorFiles: 0,
+    jetbrainsCleared: false,
+    vscodeCleared: false,
+    cursorCleared: false,
+    target: options.target,
     startTime: now(),
     endTime: now()
   )
   
   try:
-    info "开始 Augment 试用期重置"
-    
-    # 检查并关闭编辑器
-    echo "🔍 检查正在运行的编辑器..."
-    let editorCheck = isEditorRunning()
-    if editorCheck.success and editorCheck.data.isSome and editorCheck.data.get():
-      echo "⚠️ 检测到 VS Code 或 Cursor 正在运行，尝试关闭..."
-      let killResult = await killEditorProcess()
-      if killResult.success and killResult.data.isSome and killResult.data.get():
-        echo "✅ 编辑器已关闭"
-      else:
-        echo "❌ 无法关闭编辑器，请手动关闭后重试"
-        result.error = "无法关闭编辑器"
-        return result
+    info fmt"开始 Augment 试用期重置 - 目标: {getTargetDescription(options.target)}"
 
-    # 检查并关闭 JetBrains IDE
-    echo "\n🔍 检查正在运行的 JetBrains IDE..."
-    let jetbrainsCheck = isJetBrainsRunning()
-    if jetbrainsCheck.success and jetbrainsCheck.data.isSome and jetbrainsCheck.data.get():
-      echo "⚠️ 检测到 JetBrains IDE 正在运行，尝试关闭..."
-      let killJetBrainsResult = await killJetBrainsProcess()
-      if killJetBrainsResult.success and killJetBrainsResult.data.isSome and killJetBrainsResult.data.get():
-        echo "✅ JetBrains IDE 已关闭\n"
-      else:
-        echo "❌ 无法关闭 JetBrains IDE，请手动关闭后重试"
-        result.error = "无法关闭 JetBrains IDE"
-        return result
-    else:
-      echo "✅ 未检测到运行中的 JetBrains IDE\n"
-    
-    # 获取配置路径
-    let pathsResult = getAugmentConfigPaths()
-    if not pathsResult.success or pathsResult.data.isNone:
-      result.error = pathsResult.error
-      return result
-    
-    let configPaths = pathsResult.data.get()
-    stats.totalFiles = configPaths.len
-    echo fmt"📂 找到 {configPaths.len} 个配置路径"
-    
-    # 生成新的账户配置
-    echo "🎲 生成新的账户数据..."
-    let accountConfig = generateAccountConfig()
-    echo "✅ 新账户数据生成成功\n"
+    # 生成新的账户配置（如果需要的话）
+    var accountConfig: AugmentConfig
+    if options.target in [ctAll, ctVSCode, ctCursor]:
+      accountConfig = generateAccountConfig()
 
-    # 处理每个配置文件
-    for pathInfo in configPaths:
-      echo fmt"\n🔄 处理: {pathInfo.path}"
-      
-      let processResult = await processConfigFile(pathInfo, accountConfig)
-      if processResult.success:
-        stats.processedFiles.inc
-        echo "✅ 处理成功"
-      else:
-        stats.errorFiles.inc
-        echo fmt"❌ 处理失败: {processResult.error}"
-    
-    # 清理数据库记录
-    echo "\n🗄️ 清理数据库记录..."
-    let dbCleanResult = await cleanAllDatabases()
-    if dbCleanResult.success and dbCleanResult.data.isSome:
-      let dbResults = dbCleanResult.data.get()
-      for dbResult in dbResults:
-        if dbResult.success:
-          echo fmt"✅ 数据库清理成功: {extractFilename(dbResult.dbPath)}"
+    # 根据目标检查并关闭相应的编辑器
+    if options.target in [ctAll, ctVSCode, ctCursor]:
+      echo "🔍 检查正在运行的编辑器..."
+      let editorCheck = isEditorRunning()
+      if editorCheck.success and editorCheck.data.isSome and editorCheck.data.get():
+        echo "⚠️ 检测到 VS Code 或 Cursor 正在运行，尝试关闭..."
+        let killResult = await killEditorProcess()
+        if killResult.success and killResult.data.isSome and killResult.data.get():
+          echo "✅ 编辑器已关闭"
         else:
-          echo fmt"❌ 数据库清理失败: {extractFilename(dbResult.dbPath)} - {dbResult.error}"
+          echo "❌ 无法关闭编辑器，请手动关闭后重试"
+          result.error = "无法关闭编辑器"
+          return result
+      else:
+        echo "✅ 未检测到运行中的编辑器"
+
+    # 根据目标检查并关闭 JetBrains IDE
+    if options.target in [ctAll, ctJetBrains]:
+      echo "\n🔍 检查正在运行的 JetBrains IDE..."
+      let jetbrainsCheck = isJetBrainsRunning()
+      if jetbrainsCheck.success and jetbrainsCheck.data.isSome and jetbrainsCheck.data.get():
+        echo "⚠️ 检测到 JetBrains IDE 正在运行，尝试关闭..."
+        let killJetBrainsResult = await killJetBrainsProcess()
+        if killJetBrainsResult.success and killJetBrainsResult.data.isSome and killJetBrainsResult.data.get():
+          echo "✅ JetBrains IDE 已关闭"
+        else:
+          echo "❌ 无法关闭 JetBrains IDE，请手动关闭后重试"
+          result.error = "无法关闭 JetBrains IDE"
+          return result
+      else:
+        echo "✅ 未检测到运行中的 JetBrains IDE"
+    
+    # 获取配置路径并根据目标过滤
+    var configPaths: seq[ConfigPathInfo] = @[]
+
+    if options.target in [ctAll, ctVSCode, ctCursor]:
+      let pathsResult = getAugmentConfigPaths()
+      if not pathsResult.success or pathsResult.data.isNone:
+        result.error = pathsResult.error
+        return result
+
+      configPaths = pathsResult.data.get()
+
+      # 根据目标过滤路径
+      if options.target == ctVSCode:
+        configPaths = configPaths.filter(proc(p: ConfigPathInfo): bool = p.editorType == etCode)
+        stats.vscodeCleared = true
+      elif options.target == ctCursor:
+        configPaths = configPaths.filter(proc(p: ConfigPathInfo): bool = p.editorType == etCursor)
+        stats.cursorCleared = true
+      else: # ctAll
+        stats.vscodeCleared = true
+        stats.cursorCleared = true
+
+      stats.totalFiles = configPaths.len
+      echo fmt"📂 找到 {configPaths.len} 个配置路径"
     else:
-      echo fmt"❌ 数据库清理失败: {dbCleanResult.error}"
+      echo "📂 跳过 VS Code/Cursor 配置文件处理"
+    
+    # 处理配置文件（如果有的话）
+    if configPaths.len > 0:
+      echo "🎲 使用生成的账户数据处理配置文件...\n"
+
+      # 处理每个配置文件
+      for pathInfo in configPaths:
+        echo fmt"🔄 处理: {pathInfo.path}"
+
+        let processResult = await processConfigFile(pathInfo, accountConfig)
+        if processResult.success:
+          stats.processedFiles.inc
+          echo "✅ 处理成功"
+        else:
+          stats.errorFiles.inc
+          echo fmt"❌ 处理失败: {processResult.error}"
+    
+    # 清理数据库记录（仅针对 VS Code/Cursor）
+    if options.target in [ctAll, ctVSCode, ctCursor]:
+      echo "\n🗄️ 清理数据库记录..."
+      let dbCleanResult = await cleanAllDatabases()
+      if dbCleanResult.success and dbCleanResult.data.isSome:
+        let dbResults = dbCleanResult.data.get()
+        for dbResult in dbResults:
+          if dbResult.success:
+            echo fmt"✅ 数据库清理成功: {extractFilename(dbResult.dbPath)}"
+          else:
+            echo fmt"❌ 数据库清理失败: {extractFilename(dbResult.dbPath)} - {dbResult.error}"
+      else:
+        echo fmt"❌ 数据库清理失败: {dbCleanResult.error}"
+    else:
+      echo "\n🗄️ 跳过数据库清理（仅适用于 VS Code/Cursor）"
 
     # 清理 JetBrains 相关数据
-    echo "\n🔧 清理 JetBrains IDE 数据..."
-    let jetbrainsCleanResult = await cleanJetBrains()
-    if jetbrainsCleanResult.success and jetbrainsCleanResult.data.isSome:
-      let jetbrainsResult = jetbrainsCleanResult.data.get()
-      if jetbrainsResult.success:
-        stats.jetbrainsCleared = true
-        echo "✅ JetBrains 数据清理完成"
-        if jetbrainsResult.registryCleared:
-          echo "  📋 注册表已清理"
-        if jetbrainsResult.clearedPaths.len > 0:
-          echo fmt"  📁 清理了 {jetbrainsResult.clearedPaths.len} 个目录"
+    if options.target in [ctAll, ctJetBrains]:
+      echo "\n🔧 清理 JetBrains IDE 数据..."
+      let jetbrainsCleanResult = await cleanJetBrains()
+      if jetbrainsCleanResult.success and jetbrainsCleanResult.data.isSome:
+        let jetbrainsResult = jetbrainsCleanResult.data.get()
+        if jetbrainsResult.success:
+          stats.jetbrainsCleared = true
+          echo "✅ JetBrains 数据清理完成"
+          if jetbrainsResult.registryCleared:
+            echo "  📋 注册表已清理"
+          if jetbrainsResult.clearedPaths.len > 0:
+            echo fmt"  📁 清理了 {jetbrainsResult.clearedPaths.len} 个目录"
+        else:
+          echo fmt"❌ JetBrains 数据清理失败: {jetbrainsResult.error}"
       else:
-        echo fmt"❌ JetBrains 数据清理失败: {jetbrainsResult.error}"
+        echo fmt"❌ JetBrains 清理过程失败: {jetbrainsCleanResult.error}"
     else:
-      echo fmt"❌ JetBrains 清理过程失败: {jetbrainsCleanResult.error}"
+      echo "\n🔧 跳过 JetBrains IDE 数据清理"
 
     # 清理过期备份文件
     echo "\n🧹 清理过期备份文件..."
@@ -196,11 +231,24 @@ proc resetAugmentTrial*(): Future[OperationResult[ResetStats]] {.async.} =
 
     # 显示统计信息
     echo "\n📊 重置统计:"
+    echo fmt"清理目标: {getTargetDescription(stats.target)}"
     echo fmt"总文件数: {stats.totalFiles}"
     echo fmt"成功处理: {stats.processedFiles}"
     echo fmt"处理失败: {stats.errorFiles}"
-    let jetbrainsStatus = if stats.jetbrainsCleared: "✅ 已完成" else: "❌ 未执行"
-    echo fmt"JetBrains 清理: {jetbrainsStatus}"
+
+    # 显示各个组件的清理状态
+    if options.target in [ctAll, ctVSCode]:
+      let vscodeStatus = if stats.vscodeCleared: "✅ 已完成" else: "❌ 未执行"
+      echo fmt"VS Code 清理: {vscodeStatus}"
+
+    if options.target in [ctAll, ctCursor]:
+      let cursorStatus = if stats.cursorCleared: "✅ 已完成" else: "❌ 未执行"
+      echo fmt"Cursor 清理: {cursorStatus}"
+
+    if options.target in [ctAll, ctJetBrains]:
+      let jetbrainsStatus = if stats.jetbrainsCleared: "✅ 已完成" else: "❌ 未执行"
+      echo fmt"JetBrains 清理: {jetbrainsStatus}"
+
     echo fmt"处理时间: {(stats.endTime - stats.startTime).inMilliseconds} 毫秒"
 
     echo "\n🎉 Augment 扩展试用期重置完成!"
