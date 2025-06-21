@@ -17,13 +17,14 @@
 - 💾 **自动备份**: 清理前自动创建备份，安全可靠
 - 🎨 **友好界面**: 彩色输出、进度条和交互式菜单
 - 🛡️ **错误处理**: 完善的错误处理和恢复机制
+- 📐 **完美对齐**: 优化的 banner 显示，支持中文字符正确对齐
 
 ## 🎯 支持的编辑器
 
-- **VS Code** - Visual Studio Code
-- **Cursor** - AI-powered code editor
-- **Void** - Modern code editor
-- **JetBrains IDE 系列** - IntelliJ IDEA, PyCharm, WebStorm 等
+- **VS Code** - Visual Studio Code (数据库清理 + 设备ID重新生成)
+- **Cursor** - AI-powered code editor (数据库清理 + 设备ID重新生成)
+- **Void** - Modern code editor (数据库清理 + 设备ID重新生成)
+- **JetBrains IDE 系列** - IntelliJ IDEA, PyCharm, WebStorm 等 (注册表清理 + 配置目录清理)
 
 ## 📦 安装
 
@@ -53,6 +54,12 @@ cargo build --release
 # 启动交互式菜单
 augment-reset
 ```
+
+**新增交互式菜单功能：**
+- 🎯 主菜单选项：开始清理 / 查看统计信息 / 退出程序
+- 🔄 编辑器选择菜单：支持返回主菜单
+- 📊 内置统计信息查看
+- 🚪 优雅的退出选项，用户可以随时安全退出
 
 ### 命令行模式
 

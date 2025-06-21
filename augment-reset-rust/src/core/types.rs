@@ -217,3 +217,91 @@ impl Default for AppConfig {
         }
     }
 }
+
+/// JetBrains 清理结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JetBrainsCleanResult {
+    pub success: bool,
+    pub registry_cleared: bool,
+    pub jetbrains_dir: String,
+    pub augment_dir: String,
+    pub cleared_paths: Vec<String>,
+    pub error: Option<String>,
+    pub timestamp: DateTime<Utc>,
+}
+
+impl JetBrainsCleanResult {
+    pub fn success(
+        registry_cleared: bool,
+        jetbrains_dir: String,
+        augment_dir: String,
+        cleared_paths: Vec<String>,
+    ) -> Self {
+        Self {
+            success: true,
+            registry_cleared,
+            jetbrains_dir,
+            augment_dir,
+            cleared_paths,
+            error: None,
+            timestamp: Utc::now(),
+        }
+    }
+
+    pub fn failure(error: String) -> Self {
+        Self {
+            success: false,
+            registry_cleared: false,
+            jetbrains_dir: String::new(),
+            augment_dir: String::new(),
+            cleared_paths: Vec::new(),
+            error: Some(error),
+            timestamp: Utc::now(),
+        }
+    }
+}
+
+/// Augment 账户配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AugmentConfig {
+    pub device_id: String,
+    pub user_id: String,
+    pub email: String,
+    pub session_id: String,
+    pub trial_start_date: DateTime<Utc>,
+    pub trial_end_date: DateTime<Utc>,
+    pub trial_count: u32,
+    pub reset_history: Vec<DateTime<Utc>>,
+}
+
+/// 配置文件处理结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigProcessResult {
+    pub success: bool,
+    pub processed_files: Vec<String>,
+    pub generated_configs: Vec<String>,
+    pub error: Option<String>,
+    pub timestamp: DateTime<Utc>,
+}
+
+impl ConfigProcessResult {
+    pub fn success(processed_files: Vec<String>, generated_configs: Vec<String>) -> Self {
+        Self {
+            success: true,
+            processed_files,
+            generated_configs,
+            error: None,
+            timestamp: Utc::now(),
+        }
+    }
+
+    pub fn failure(error: String) -> Self {
+        Self {
+            success: false,
+            processed_files: Vec::new(),
+            generated_configs: Vec::new(),
+            error: Some(error),
+            timestamp: Utc::now(),
+        }
+    }
+}

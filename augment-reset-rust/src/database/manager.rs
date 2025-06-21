@@ -1,5 +1,7 @@
 use crate::core::{types::*, Result, AugmentError};
 use crate::filesystem::FileOperations;
+use crate::idgen::IdGenerator;
+use crate::config::ConfigGenerator;
 use log::{debug, info, warn, error};
 use rusqlite::{Connection, params};
 use std::path::Path;
@@ -49,6 +51,23 @@ impl DatabaseManager {
                     "{} 数据库清理完成，删除了 {} 条记录",
                     db_path.editor_type, deleted_count
                 );
+
+                // 如果清理了记录，生成新的配置文件
+                if deleted_count > 0 {
+                    match Self::generate_new_configs(db_path).await {
+                        Ok(config_result) => {
+                            if config_result.success {
+                                info!("✅ 新配置文件生成成功: {:?}", config_result.generated_configs);
+                            } else {
+                                warn!("⚠️ 配置文件生成失败: {:?}", config_result.error);
+                            }
+                        }
+                        Err(e) => {
+                            warn!("⚠️ 配置文件生成过程中出错: {}", e);
+                        }
+                    }
+                }
+
                 Ok(DatabaseCleanResult::success(
                     db_path_str,
                     backup_path,
@@ -138,6 +157,73 @@ impl DatabaseManager {
         tx.commit()?;
 
         Ok(deleted_count)
+    }
+
+    /// 生成新的配置文件
+    pub async fn generate_new_configs(db_path: &DatabasePath) -> Result<ConfigProcessResult> {
+        info!("为 {} 生成新的配置文件", db_path.editor_type);
+
+        // 生成新的账户配置
+        let account_config = IdGenerator::generate_account_config()?;
+
+        let mut processed_files = Vec::new();
+        let mut generated_configs = Vec::new();
+
+        // 根据编辑器类型生成相应的配置
+        match db_path.editor_type {
+            EditorType::VSCode => {
+                let config = ConfigGenerator::create_vscode_config(&account_config)?;
+                let config_path = db_path.path.parent()
+                    .ok_or_else(|| AugmentError::internal("无法获取父目录".to_string()))?
+                    .join("augment_config.json");
+
+                let config_content = serde_json::to_string_pretty(&config)
+                    .map_err(|e| AugmentError::Json(e))?;
+
+                tokio::fs::write(&config_path, config_content).await
+                    .map_err(|e| AugmentError::filesystem(e))?;
+
+                processed_files.push(config_path.display().to_string());
+                generated_configs.push("VSCode Augment Config".to_string());
+            }
+            EditorType::Cursor => {
+                let config = ConfigGenerator::create_cursor_config(&account_config)?;
+                let config_path = db_path.path.parent()
+                    .ok_or_else(|| AugmentError::internal("无法获取父目录".to_string()))?
+                    .join("augment_config.json");
+
+                let config_content = serde_json::to_string_pretty(&config)
+                    .map_err(|e| AugmentError::Json(e))?;
+
+                tokio::fs::write(&config_path, config_content).await
+                    .map_err(|e| AugmentError::filesystem(e))?;
+
+                processed_files.push(config_path.display().to_string());
+                generated_configs.push("Cursor Augment Config".to_string());
+            }
+            EditorType::Void => {
+                let config = ConfigGenerator::create_generic_config(&account_config)?;
+                let config_path = db_path.path.parent()
+                    .ok_or_else(|| AugmentError::internal("无法获取父目录".to_string()))?
+                    .join("augment_config.json");
+
+                let config_content = serde_json::to_string_pretty(&config)
+                    .map_err(|e| AugmentError::Json(e))?;
+
+                tokio::fs::write(&config_path, config_content).await
+                    .map_err(|e| AugmentError::filesystem(e))?;
+
+                processed_files.push(config_path.display().to_string());
+                generated_configs.push("Void Augment Config".to_string());
+            }
+            EditorType::JetBrains => {
+                // JetBrains 使用不同的配置方式，在 jetbrains 模块中处理
+                info!("JetBrains 配置将在专门的模块中处理");
+            }
+        }
+
+        info!("配置文件生成完成，处理了 {} 个文件", processed_files.len());
+        Ok(ConfigProcessResult::success(processed_files, generated_configs))
     }
 
     /// 检查数据库表是否存在

@@ -130,6 +130,18 @@ impl AugmentError {
         }
     }
 
+    /// 创建文件系统错误
+    pub fn filesystem<E: Into<std::io::Error>>(error: E) -> Self {
+        Self::Filesystem(error.into())
+    }
+
+    /// 创建系统错误
+    pub fn system<S: Into<String>>(message: S) -> Self {
+        Self::Internal {
+            message: message.into(),
+        }
+    }
+
     /// 检查是否为致命错误
     pub fn is_fatal(&self) -> bool {
         matches!(

@@ -41,6 +41,9 @@ walkdir = "2.4"
 # 时间处理
 chrono = { version = "0.4", features = ["serde"] }
 
+# 随机数生成
+rand = "0.8"
+
 # 跨平台路径
 dirs = "5.0"
 

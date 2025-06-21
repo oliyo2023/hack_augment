@@ -52,27 +52,75 @@ impl InteractiveMenu {
 
     /// 选择要清理的编辑器
     fn select_editors() -> Result<Vec<EditorType>> {
-        let editors = vec![
-            ("VS Code", EditorType::VSCode),
-            ("Cursor", EditorType::Cursor),
-            ("Void", EditorType::Void),
-            ("JetBrains IDE 系列", EditorType::JetBrains),
+        // 首先显示主菜单选项
+        let main_options = vec![
+            "🚀 开始清理 Augment 数据",
+            "📊 查看统计信息",
+            "🚪 退出程序",
         ];
 
-        let editor_names: Vec<&str> = editors.iter().map(|(name, _)| *name).collect();
-
-        let selections = MultiSelect::with_theme(&ColorfulTheme::default())
-            .with_prompt("请选择要清理的编辑器")
-            .items(&editor_names)
-            .defaults(&[true, true, true, false]) // 默认选择前三个
+        let main_selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("请选择操作")
+            .items(&main_options)
+            .default(0)
             .interact()?;
 
-        let selected_editors: Vec<EditorType> = selections
-            .into_iter()
-            .map(|i| editors[i].1.clone())
-            .collect();
+        match main_selection {
+            0 => {
+                // 继续选择编辑器
+                let editors = vec![
+                    ("VS Code", EditorType::VSCode),
+                    ("Cursor", EditorType::Cursor),
+                    ("Void", EditorType::Void),
+                    ("JetBrains IDE 系列", EditorType::JetBrains),
+                ];
 
-        Ok(selected_editors)
+                let mut editor_names: Vec<&str> = editors.iter().map(|(name, _)| *name).collect();
+                editor_names.push("🚪 返回主菜单");
+
+                let selections = MultiSelect::with_theme(&ColorfulTheme::default())
+                    .with_prompt("请选择要清理的编辑器 (空格选择，回车确认)")
+                    .items(&editor_names)
+                    .defaults(&[true, true, true, false, false]) // 默认选择前三个，不选择返回选项
+                    .interact()?;
+
+                // 检查是否选择了返回选项
+                if selections.contains(&(editor_names.len() - 1)) {
+                    // 如果选择了返回，递归调用自己重新显示主菜单
+                    return Self::select_editors();
+                }
+
+                let selected_editors: Vec<EditorType> = selections
+                    .into_iter()
+                    .filter(|&i| i < editors.len()) // 过滤掉返回选项
+                    .map(|i| editors[i].1.clone())
+                    .collect();
+
+                Ok(selected_editors)
+            }
+            1 => {
+                // 查看统计信息
+                println!();
+                if let Err(e) = Self::show_stats_menu_sync() {
+                    println!("{} {}", "错误:".red(), e);
+                }
+                println!();
+                println!("{}", "按回车键继续...".bright_black());
+                std::io::stdin().read_line(&mut String::new()).ok();
+
+                // 递归调用自己重新显示主菜单
+                Self::select_editors()
+            }
+            2 => {
+                // 退出程序
+                println!("{}", "👋 感谢使用 Augment Reset！".bright_green());
+                Err(AugmentError::UserCancelled)
+            }
+            _ => {
+                // 默认退出
+                Err(AugmentError::UserCancelled)
+            }
+        }
     }
 
     /// 选择操作选项
@@ -191,6 +239,40 @@ impl InteractiveMenu {
                 println!("   状态: {}", "不存在".yellow());
             }
             println!();
+        }
+
+        Ok(())
+    }
+
+    /// 显示统计信息菜单 (同步版本，用于交互式菜单)
+    fn show_stats_menu_sync() -> Result<()> {
+        use crate::filesystem::PathManager;
+
+        println!("{}", "📊 数据库统计信息".bright_cyan().bold());
+        println!();
+
+        let options = CleanOptions::default();
+        let db_paths = PathManager::get_database_paths(&options)?;
+
+        if db_paths.is_empty() {
+            println!("{}", "未找到任何数据库文件。".yellow());
+            return Ok(());
+        }
+
+        println!("找到的数据库文件:");
+        for db_path in &db_paths {
+            let status = if db_path.exists {
+                "存在".green()
+            } else {
+                "不存在".yellow()
+            };
+            println!("  {} {} - {}", "📁".blue(), db_path.editor_type, status);
+            println!("     路径: {}", db_path.path.display().to_string().bright_black());
+        }
+
+        if db_paths.iter().any(|p| p.exists) {
+            println!();
+            println!("{}", "💡 提示: 使用 'augment-reset stats --detailed' 查看详细统计信息".bright_blue());
         }
 
         Ok(())
