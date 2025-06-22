@@ -134,7 +134,7 @@ pub async fn run_app(options: CleanOptions) -> Result<Vec<DatabaseCleanResult>> 
     };
 
     // 执行数据库清理
-    let mut results = DatabaseManager::clean_all_databases(&options).await?;
+    let results = DatabaseManager::clean_all_databases(&options).await?;
 
     // 如果启用了JetBrains清理
     if options.clean_jetbrains {

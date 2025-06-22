@@ -47,6 +47,25 @@ pub struct AugmentConfig {
 pub struct IdGenerator;
 
 impl IdGenerator {
+    // Helper function to generate a 6-character random string starting with a letter
+    fn generate_random_prefix() -> Result<String> {
+        let mut rng = thread_rng();
+        let first_char = rng.gen_range(b'a'..=b'z') as char;
+        let mut prefix = String::with_capacity(6);
+        prefix.push(first_char);
+
+        for _ in 0..5 {
+            let hex_char = rng.gen_range(0..16);
+            let char = match hex_char {
+                0..=9 => (b'0' + hex_char) as char,
+                10..=15 => (b'a' + hex_char - 10) as char,
+                _ => unreachable!(),
+            };
+            prefix.push(char);
+        }
+        Ok(prefix)
+    }
+
     /// 生成安全的随机十六进制字符串
     fn generate_secure_random_string(length: usize, uppercase: bool) -> Result<String> {
         let mut rng = thread_rng();
@@ -116,16 +135,16 @@ impl IdGenerator {
 
     /// 生成随机邮箱
     pub fn generate_email() -> Result<String> {
-        match Self::generate_secure_random_string(constants::EMAIL_RANDOM_LENGTH, false) {
-            Ok(random_string) => {
-                let email = format!("user_{}@example.com", random_string);
+        match Self::generate_random_prefix() { // Use the new helper function
+            Ok(prefix) => {
+                let email = format!("{}@gmail.com", prefix);
                 info!("生成新邮箱: {}", email);
                 Ok(email)
             }
             Err(e) => {
                 error!("生成邮箱失败: {}", e);
                 let timestamp = Utc::now().timestamp();
-                Ok(format!("fallback_user_{}@example.com", timestamp))
+                Ok(format!("fallback_xspan_{}@gmail.com", timestamp)) // Fallback remains the same
             }
         }
     }

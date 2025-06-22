@@ -1,0 +1,277 @@
+name: 跨平台构建和发布
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  PROJECT_NAME: augment-reset
+
+jobs:
+  # 代码质量检查
+  quality-check:
+    name: 代码质量检查
+    runs-on: ubuntu-latest
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 安装 Rust 工具链
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: 缓存 Cargo 依赖
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: 代码格式检查
+      run: cargo fmt --all -- --check
+
+    - name: Clippy 检查
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+    - name: 运行测试
+      run: cargo test --verbose
+
+  # 跨平台构建
+  cross-platform-build:
+    name: 构建 ${{ matrix.target }}
+    needs: quality-check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows 目标
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            name: windows-x64-msvc
+            
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            name: windows-x64-gnu
+            
+          - target: i686-pc-windows-msvc
+            os: windows-latest
+            name: windows-x86-msvc
+
+          # Linux 目标
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: linux-x64-glibc
+            
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            name: linux-x64-musl
+            
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: linux-arm64
+
+          # macOS 目标
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            name: macos-x64
+            
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            name: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 安装 Rust 工具链
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+
+    - name: 缓存 Cargo 依赖
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    # Linux 特殊依赖
+    - name: 安装 Linux 交叉编译依赖
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib
+        
+        # ARM64 交叉编译工具
+        if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+        fi
+        
+        # musl 工具
+        if [[ "${{ matrix.target }}" == *"musl"* ]]; then
+          sudo apt-get install -y musl-tools
+        fi
+
+    # Windows 特殊设置
+    - name: 配置 Windows 构建环境
+      if: matrix.os == 'windows-latest' && matrix.target == 'x86_64-pc-windows-gnu'
+      run: |
+        # 确保 MinGW 在 PATH 中
+        echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
+
+    - name: 构建项目
+      run: |
+        cargo build --release --target ${{ matrix.target }} --features full
+        
+    - name: 准备发布文件
+      shell: bash
+      run: |
+        # 创建发布目录
+        mkdir -p release
+        
+        # 确定可执行文件名
+        if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+          exe_name="${PROJECT_NAME}.exe"
+        else
+          exe_name="${PROJECT_NAME}"
+        fi
+        
+        # 复制可执行文件
+        cp "target/${{ matrix.target }}/release/${exe_name}" "release/"
+        
+        # 复制其他文件
+        cp README.md release/ || true
+        cp LICENSE release/ || true
+        cp CHANGELOG.md release/ || true
+        
+        # 创建压缩包
+        cd release
+        if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+          7z a "../${{ env.PROJECT_NAME }}-${{ matrix.name }}.zip" *
+        else
+          tar -czf "../${{ env.PROJECT_NAME }}-${{ matrix.name }}.tar.gz" *
+        fi
+
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.PROJECT_NAME }}-${{ matrix.name }}
+        path: |
+          ${{ env.PROJECT_NAME }}-${{ matrix.name }}.*
+        retention-days: 30
+
+  # 创建发布
+  create-release:
+    name: 创建发布
+    needs: cross-platform-build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 下载所有构建产物
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: 准备发布文件
+      run: |
+        mkdir -p release-files
+        find artifacts -name "*.zip" -o -name "*.tar.gz" | while read file; do
+          cp "$file" release-files/
+        done
+        
+        # 生成校验和
+        cd release-files
+        sha256sum * > checksums.sha256
+
+    - name: 创建 GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release-files/*
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        generate_release_notes: true
+        body: |
+          ## 🚀 Augment Reset v${{ github.ref_name }}
+          
+          ### 📦 下载
+          
+          选择适合您操作系统的版本：
+          
+          **Windows:**
+          - `augment-reset-windows-x64-msvc.zip` - Windows x64 (推荐)
+          - `augment-reset-windows-x64-gnu.zip` - Windows x64 (GNU)
+          - `augment-reset-windows-x86-msvc.zip` - Windows x86
+          
+          **Linux:**
+          - `augment-reset-linux-x64-glibc.tar.gz` - Linux x64 (glibc)
+          - `augment-reset-linux-x64-musl.tar.gz` - Linux x64 (musl, 静态链接)
+          - `augment-reset-linux-arm64.tar.gz` - Linux ARM64
+          
+          **macOS:**
+          - `augment-reset-macos-x64.tar.gz` - macOS Intel
+          - `augment-reset-macos-arm64.tar.gz` - macOS Apple Silicon
+          
+          ### ✅ 校验和
+          
+          下载后请使用 `checksums.sha256` 文件验证文件完整性。
+          
+          ### 🔧 使用方法
+          
+          1. 下载适合您系统的版本
+          2. 解压文件
+          3. 运行 `augment-reset` (Linux/macOS) 或 `augment-reset.exe` (Windows)
+          
+          更多信息请查看 [README.md](https://github.com/${{ github.repository }}/blob/main/README.md)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 性能基准测试（可选）
+  benchmark:
+    name: 性能基准测试
+    needs: quality-check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 安装 Rust 工具链
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: 缓存 Cargo 依赖
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-benchmark-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: 运行基准测试
+      run: |
+        # 如果有基准测试的话
+        # cargo bench
+        echo "基准测试功能待实现"

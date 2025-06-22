@@ -81,3 +81,27 @@ overflow-checks = false  # 禁用溢出检查
 # 开发时设置
 opt-level = 0
 debug = true
+
+# 跨平台编译目标配置
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
+
+[target.x86_64-pc-windows-msvc]
+# Windows MSVC 目标，需要 Visual Studio Build Tools
+
+[target.x86_64-unknown-linux-gnu]
+# Linux 目标，默认配置
+
+[target.x86_64-unknown-linux-musl]
+# Linux musl 目标，静态链接
+linker = "x86_64-linux-musl-gcc"
+
+[target.aarch64-unknown-linux-gnu]
+# ARM64 Linux 目标
+linker = "aarch64-linux-gnu-gcc"
+
+[target.x86_64-apple-darwin]
+# macOS Intel 目标
+
+[target.aarch64-apple-darwin]
+# macOS Apple Silicon 目标
